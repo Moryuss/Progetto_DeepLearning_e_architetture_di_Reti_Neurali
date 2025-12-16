@@ -1,0 +1,25 @@
+face_recognition/
+│
+├── src/
+│   ├── main.py            # entrypoint (quello che esegui)
+│   ├── camera.py          # acquisizione frame
+│   ├── detector.py        # YOLO ONNX
+│   ├── recognizer.py      # FaceNet / ArcFace ONNX
+│   ├── matcher.py         # confronto embedding
+│   ├── utils.py           # crop, resize, preprocessing
+│
+├── models/
+│   ├── yolo_face.onnx
+│   └── facenet.onnx
+│
+├── data/
+│   └── embeddings/
+│       ├── alice.npy
+│       └── bob.npy
+│
+├── config.yaml
+├── requirements.txt
+└── README.md
+
+
+https://chatgpt.com/share/6941c316-9134-8005-93e9-1fe4e4312b71
