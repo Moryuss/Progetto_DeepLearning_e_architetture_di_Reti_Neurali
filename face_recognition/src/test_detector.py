@@ -1,6 +1,6 @@
 import cv2
 from detector import FaceDetector
-from camera import Camera  # la tua classe camera.py
+from camera import Camera
 
 # Percorso al modello .task
 model_path = "models/blaze_face_short_range.tflite"
