@@ -1,100 +1,78 @@
 import cv2
-import mediapipe as mp
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
+from ultralytics import YOLO
 
 
 class FaceDetector:
-    def __init__(self, model_path: str, min_detection_confidence: float = 0.5):
+    def __init__(self, model_path: str = 'yolov8n-face.pt', min_detection_confidence: float = 0.5):
         """
-        FaceDetector basato su MediaPipe Tasks.
+        FaceDetector basato su YOLO (Ultralytics).
 
         Args:
-            model_path: percorso al file .task
-            min_detection_confidence: soglia minima di rilevamento [0,1]
+            model_path: percorso al file .pt (es. 'yolov8n-face.pt' o 'yolov11n-face.pt')
+            min_detection_confidence: soglia minima di confidenza [0,1]
         """
-        # Base options per il modello
-        base_options = python.BaseOptions(model_asset_path=model_path)
-
-        # Configurazione detector
-        options = vision.FaceDetectorOptions(
-            base_options=base_options,
-            min_detection_confidence=min_detection_confidence
-        )
-
-        # Creazione del detector
-        self.detector = vision.FaceDetector.create_from_options(options)
+        # Carica il modello YOLO
+        self.model = YOLO(model_path)
+        self.conf = min_detection_confidence
 
     def detect(self, frame):
         """
         Rileva volti in un frame BGR.
 
-        Args:
-            frame: np.ndarray (H, W, 3), immagine BGR
-
         Returns:
             List[Tuple[int, int, int, int]]: lista di bounding box (x1, y1, x2, y2)
         """
-        h, w, _ = frame.shape
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-        # Conversione in MediaPipe Image
-        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
-
-        results = self.detector.detect(mp_image)
+        # Esegue l'inferenza
+        # stream=True è più efficiente per i video
+        results = self.model(frame, conf=self.conf, verbose=False)
 
         bboxes = []
-        if results.detections:
-            for detection in results.detections:
-                box = detection.bounding_box
-                x1 = int(box.origin_x)
-                y1 = int(box.origin_y)
-                x2 = int(box.origin_x + box.width)
-                y2 = int(box.origin_y + box.height)
+        for result in results:
+            for box in result.boxes:
+                # Coordinate come float e poi convertite in int
+                x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
                 bboxes.append((x1, y1, x2, y2))
 
         return bboxes
 
-    def close(self):
-        """Chiude il detector e libera risorse"""
-        self.detector.close()
-
     def detect_with_keypoints(self, frame):
         """
-        Rileva volti con keypoints.
+        Rileva volti con keypoints (occhi, naso, orecchie, bocca).
 
         Returns:
-            List[Dict]: lista di dizionari con 'bbox' e 'keypoints'
+            List[Dict]: lista di dizionari con 'bbox', 'keypoints' e 'score'
         """
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
-        results = self.detector.detect(mp_image)
+        results = self.model(frame, conf=self.conf, verbose=False)
 
         faces = []
-        if results.detections:
-            for detection in results.detections:
-                # Bounding box
-                box = detection.bounding_box
-                bbox = (
-                    int(box.origin_x),
-                    int(box.origin_y),
-                    int(box.origin_x + box.width),
-                    int(box.origin_y + box.height)
-                )
+        for result in results:
+            # result.boxes contiene le bbox, result.keypoints i punti del volto
+            boxes = result.boxes.xyxy.cpu().numpy()
+            scores = result.boxes.conf.cpu().numpy()
 
-                # Keypoints (se disponibili)
-                keypoints = []
-                if detection.keypoints:
-                    for kp in detection.keypoints:
-                        keypoints.append({
-                            'x': int(kp.x * frame.shape[1]),
-                            'y': int(kp.y * frame.shape[0])
+            # YOLO-face restituisce solitamente 5 o 6 keypoints
+            if result.keypoints is not None:
+                kpts_all = result.keypoints.xy.cpu().numpy()
+
+                for bbox, score, kpts in zip(boxes, scores, kpts_all):
+                    x1, y1, x2, y2 = map(int, bbox)
+
+                    # Formatta i keypoints come nel tuo codice originale
+                    formatted_kpts = []
+                    for kp in kpts:
+                        formatted_kpts.append({
+                            'x': int(kp[0]),
+                            'y': int(kp[1])
                         })
 
-                faces.append({
-                    'bbox': bbox,
-                    'keypoints': keypoints,
-                    'score': detection.categories[0].score if detection.categories else 0.0
-                })
+                    faces.append({
+                        'bbox': (x1, y1, x2, y2),
+                        'keypoints': formatted_kpts,
+                        'score': float(score)
+                    })
 
         return faces
+
+    def close(self):
+        """Metodo per compatibilità, YOLO gestisce la memoria automaticamente"""
+        pass
