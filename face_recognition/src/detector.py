@@ -20,10 +20,11 @@ class FaceDetector:
         Rileva volti in un frame BGR.
 
         Returns:
+            dictionary con:
             List[Tuple[int, int, int, int]]: lista di bounding box (x1, y1, x2, y2)
+            score: confidenza della rilevazione
         """
         # Esegue l'inferenza
-        # stream=True è più efficiente per i video
         results = self.model(frame, conf=self.conf, verbose=False)
         faces = []
 
