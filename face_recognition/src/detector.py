@@ -37,39 +37,46 @@ class FaceDetector:
 
     def detect_with_keypoints(self, frame):
         """
-        Rileva volti con keypoints (occhi, naso, orecchie, bocca).
-
-        Returns:
-            List[Dict]: lista di dizionari con 'bbox', 'keypoints' e 'score'
+        Rileva volti con keypoints usando YOLO11-Face.
         """
         results = self.model(frame, conf=self.conf, verbose=False)
-
         faces = []
+
         for result in results:
-            # result.boxes contiene le bbox, result.keypoints i punti del volto
+            if not result.boxes:
+                continue
+
+            # Estraiamo i dati principali
             boxes = result.boxes.xyxy.cpu().numpy()
             scores = result.boxes.conf.cpu().numpy()
 
-            # YOLO-face restituisce solitamente 5 o 6 keypoints
+            # Recupero dei Keypoints (Landmarks)
+            # In YOLO11-face sono tipicamente 5 punti per volto
             if result.keypoints is not None:
+                # .xy restituisce le coordinate pixel (N_volti, N_punti, 2)
                 kpts_all = result.keypoints.xy.cpu().numpy()
+            else:
+                kpts_all = [[] for _ in range(len(boxes))]
 
-                for bbox, score, kpts in zip(boxes, scores, kpts_all):
-                    x1, y1, x2, y2 = map(int, bbox)
+            for i in range(len(boxes)):
+                x1, y1, x2, y2 = map(int, boxes[i])
 
-                    # Formatta i keypoints come nel tuo codice originale
-                    formatted_kpts = []
-                    for kp in kpts:
-                        formatted_kpts.append({
-                            'x': int(kp[0]),
-                            'y': int(kp[1])
-                        })
+                # Gestione sicura dei keypoints per ogni singola faccia
+                formatted_kpts = []
+                if i < len(kpts_all):
+                    for kp in kpts_all[i]:
+                        # Ignora i punti (0,0) che indicano landmark non rilevati
+                        if kp[0] > 0 or kp[1] > 0:
+                            formatted_kpts.append({
+                                'x': int(kp[0]),
+                                'y': int(kp[1])
+                            })
 
-                    faces.append({
-                        'bbox': (x1, y1, x2, y2),
-                        'keypoints': formatted_kpts,
-                        'score': float(score)
-                    })
+                faces.append({
+                    'bbox': (x1, y1, x2, y2),
+                    'keypoints': formatted_kpts,
+                    'score': float(scores[i])
+                })
 
         return faces
 
