@@ -1,10 +1,10 @@
 import cv2
 # Assicurati che in detector.py ci sia la versione YOLO
-from detector import FaceDetector
-from camera import Camera
+from src.detector import FaceDetector
+from src.camera import Camera
 
 # Percorso al modello YOLO (.pt)
-model_path = "models/yolo11_nano.pt"
+model_path = "models/face_detection/yolo11_nano.pt"
 # model_path = "models/yolo8_medium.pt"
 
 # Inizializza detector

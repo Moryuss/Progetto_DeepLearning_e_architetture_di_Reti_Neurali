@@ -25,20 +25,22 @@ class FaceDetector:
         # Esegue l'inferenza
         # stream=True è più efficiente per i video
         results = self.model(frame, conf=self.conf, verbose=False)
-
-        bboxes = []
-        scores = []
         faces = []
+
         for result in results:
-            for box in result.boxes:
-                # Coordinate come float e poi convertite in int
-                x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
-                bboxes.append((x1, y1, x2, y2))
-                # score di confidenza
-                scores.append(box.conf[0].item())
+            if not result.boxes:
+                continue
+
+            # Estraiamo i dati principali
+            boxes = result.boxes.xyxy.cpu().numpy()
+            scores = result.boxes.conf.cpu().numpy()
+
+            for i in range(len(boxes)):
+                x1, y1, x2, y2 = map(int, boxes[i])
+
                 faces.append({
                     'bbox': (x1, y1, x2, y2),
-                    'score': box.conf[0].item()
+                    'score': float(scores[i])
                 })
 
         # ritrona unico dizionario con bboxes e scores

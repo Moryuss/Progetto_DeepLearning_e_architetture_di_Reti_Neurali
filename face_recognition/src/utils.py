@@ -41,6 +41,7 @@ def preprocess_for_yolo(image, input_size):
     img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     img = resize_image(img, input_size)
     img = img.astype(np.float32) / 255.0
+    # normalizza correttamente
 
     # HWC → CHW     /height, width, channels
     img = np.transpose(img, (2, 0, 1))
@@ -53,6 +54,11 @@ def preprocess_for_recognizer(image, input_size):
     """
     image: face crop BGR
     input_size: (width, height)
+
+    Preprocessing compatibile con:
+    - FaceNet
+    - ArcFace
+    - InsightFace (PyTorch)
 
     return: input tensor (1, 3, H, W)
     """

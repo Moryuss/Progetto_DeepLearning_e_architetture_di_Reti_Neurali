@@ -1,10 +1,10 @@
 import cv2
 # Assicurati che in detector.py ci sia la versione YOLO
-from detector import FaceDetector
-from camera import Camera
+from src.detector import FaceDetector
+from src.camera import Camera
 
 # Percorso al modello YOLO (.pt invece di .tflite)
-model_path = "models/yolo11_nano.pt"
+model_path = "models/face_detection/yolo11_nano.pt"
 # model_path = "models/yolo8_medium.pt"
 
 # Inizializza detector (l'interfaccia rimane identica)
@@ -20,16 +20,20 @@ try:
     while True:
         frame = cam.read()
         if frame is None:
+            print("Errore nella lettura del frame dalla webcam")
             break
 
-        # Il metodo .detect() restituisce (x1, y1, x2, y2) e scores
-        bboxes, scores = detector.detect(frame)
+        # Il metodo .detect() restituisce faces, dizionario con bbox: (x1, y1, x2, y2) e score
+        faces = detector.detect(frame)
 
         # Disegna bounding box
-        for (x1, y1, x2, y2) in bboxes:
+        for face in faces:
+            (x1, y1, x2, y2) = face['bbox']
+            score = face['score']
+
+            # bbox
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            # Opzionale: aggiungi una label
-            cv2.putText(frame, f"Face {scores[0]:.2f}", (x1, y1 - 10),
+            cv2.putText(frame, f"Face {score:.2f}", (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
         # Mostra il frame

@@ -16,7 +16,7 @@ def main():
 
     # Crea il rilevatore di volti
     detector = FaceDetector(
-        model_path="models/yolo11_nano.pt", min_detection_confidence=0.5)
+        model_path="models/face_detection/yolo11_nano.pt", min_detection_confidence=0.5)
 
     # Rileva i volti
     faces = detector.detect(frame)
