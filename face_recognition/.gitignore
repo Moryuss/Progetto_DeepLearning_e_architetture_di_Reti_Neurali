@@ -1,5 +1,5 @@
 .venv
 models
-data/dataset
-data/embeddings
-data/classify_images
+data/dataset/*
+data/embeddings/*
+data/classify_images/*
