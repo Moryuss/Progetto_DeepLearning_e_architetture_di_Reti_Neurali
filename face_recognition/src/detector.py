@@ -28,6 +28,7 @@ class FaceDetector:
 
         bboxes = []
         scores = []
+        faces = []
         for result in results:
             for box in result.boxes:
                 # Coordinate come float e poi convertite in int
@@ -35,8 +36,13 @@ class FaceDetector:
                 bboxes.append((x1, y1, x2, y2))
                 # score di confidenza
                 scores.append(box.conf[0].item())
+                faces.append({
+                    'bbox': (x1, y1, x2, y2),
+                    'score': box.conf[0].item()
+                })
 
-        return bboxes, scores
+        # ritrona unico dizionario con bboxes e scores
+        return faces
 
     def detect_with_keypoints(self, frame):
         """
