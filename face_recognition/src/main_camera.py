@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from src.detector import FaceDetector
 from src.recognizer import FaceRecognizer
-from src.utils import recognize_faces, load_dataset_embeddings
+from src.utils import recognize_faces, load_dataset_embeddings, draw_label
 from facenet_pytorch import InceptionResnetV1
 
 
@@ -25,6 +25,9 @@ def main():
 
     # Webcam
     cap = cv2.VideoCapture(0)
+    cv2.namedWindow("Face Recognition", cv2.WINDOW_NORMAL)
+    cv2.resizeWindow("Face Recognition", 640, 480)
+
     if not cap.isOpened():
         print("Errore nell'aprire la webcam")
         return
@@ -41,9 +44,9 @@ def main():
         for r in results:
             x1, y1, x2, y2 = r["bbox"]
             name = r["name"]
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, name, (x1, y1-10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            confidence = r["confidence"]
+            draw_label(frame, name, confidence, (x1, y1, x2, y2),
+                       font_scale=1, color=(255, 0, 0))
 
         cv2.imshow("Face Recognition", frame)
         if cv2.waitKey(1) & 0xFF == 27:  # ESC per uscire

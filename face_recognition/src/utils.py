@@ -33,6 +33,19 @@ def resize_image(image, size):
     return cv2.resize(image, size, interpolation=cv2.INTER_LINEAR)
 
 
+def resize_max(image, max_dim=800):
+    """
+    Ridimensiona l'immagine in modo che la dimensione più grande sia max_dim
+    Mantiene il rapporto d'aspetto
+    """
+    h, w = image.shape[:2]
+    if max(h, w) <= max_dim:
+        return image
+    scale = max_dim / max(h, w)
+    new_w, new_h = int(w * scale), int(h * scale)
+    return cv2.resize(image, (new_w, new_h))
+
+
 def preprocess_for_yolo(image, input_size):
     """
     image: frame BGR
@@ -107,7 +120,7 @@ def load_dataset_embeddings(dataset_dir: str):
 def recognize_faces(frame, detector, recognizer, embeddings_array, labels_list, threshold=0.8):
     """
     Rileva volti, calcola embedding, confronta con dataset.
-    Restituisce lista di dict con bbox e nome
+    Restituisce lista di dict con bbox, nome e confidence
     """
     faces = detector.detect(frame)
     results = []
@@ -120,13 +133,60 @@ def recognize_faces(frame, detector, recognizer, embeddings_array, labels_list, 
             emb = recognizer.model(face_tensor).cpu().numpy().flatten()
 
         name = "Unknown"
+        confidence = 0.0
+
         if embeddings_array.size > 0:
-            # Calcola distanza euclidea
             dists = np.linalg.norm(embeddings_array - emb, axis=1)
             min_idx = np.argmin(dists)
-            if dists[min_idx] < threshold:
-                name = labels_list[min_idx]
+            min_dist = dists[min_idx]
 
-        results.append({"bbox": (x1, y1, x2, y2), "name": name})
+            if min_dist < threshold:
+                name = labels_list[min_idx]
+                # confidenza normalizzata [0,1]
+                confidence = 1.0 - (min_dist / threshold)
+
+        results.append({
+            "bbox": (x1, y1, x2, y2),
+            "name": name,
+            "confidence": confidence
+        })
 
     return results
+
+
+def draw_label(frame, name, confidence, bbox, color=(0, 255, 0), font_scale=2):
+    """
+    Disegna un rettangolo e il nome con confidenza sopra il volto.
+    name: stringa del nome
+    confidence: float [0,1]
+    bbox: (x1, y1, x2, y2)
+    """
+    x1, y1, x2, y2 = bbox
+    w, h = x2 - x1, y2 - y1
+
+    # Parametri fissi leggibili
+    font_scale = font_scale
+    thickness = 2
+
+    # Testo
+    label_text = f"{name} ({confidence:.2f})"
+
+    # Rettangolo del volto
+    cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness)
+
+    # Calcola dimensione testo
+    text_size, _ = cv2.getTextSize(
+        label_text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)
+    text_w, text_h = text_size
+
+    # Posizione testo sopra il volto
+    text_x = x1
+    text_y = max(y1 - 5, text_h + 5)
+
+    # Sfondo opaco per leggibilità
+    cv2.rectangle(frame, (text_x, text_y - text_h - 2),
+                  (text_x + text_w, text_y + 2), (0, 0, 0), cv2.FILLED)
+
+    # Scrivi testo
+    cv2.putText(frame, label_text, (text_x, text_y),
+                cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, thickness)

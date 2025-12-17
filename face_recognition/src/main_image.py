@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from src.detector import FaceDetector
 from src.recognizer import FaceRecognizer
-from src.utils import recognize_faces, load_dataset_embeddings
+from src.utils import draw_label, recognize_faces, load_dataset_embeddings, resize_max, draw_label
 from facenet_pytorch import InceptionResnetV1
 
 
@@ -13,8 +13,7 @@ def main():
     dataset_dir = "data/dataset"
     yolo_model_path = "models/face_detection/yolo11_nano.pt"
     recognizer_model_path = "models/face_recognition/vggface2.pt"
-
-    image_path = "data/test_image/matteo_test_image.jpg"
+    images_dir = "data/classify_images"  # cartella con immagini da classificare
 
     # Inizializza detector e recognizer
     detector = FaceDetector(model_path=yolo_model_path)
@@ -22,29 +21,37 @@ def main():
     recognizer = FaceRecognizer(
         model=backbone, model_path=recognizer_model_path)
 
-    # Carica embeddings
+    # Carica embeddings del dataset
     embeddings_array, labels_list = load_dataset_embeddings(dataset_dir)
 
-    # Leggi immagine
-    frame = cv2.imread(image_path)
-    if frame is None:
-        print(f"Immagine non trovata: {image_path}")
-        return
+    # Scansiona tutte le immagini nella cartella
+    for fname in os.listdir(images_dir):
+        img_path = os.path.join(images_dir, fname)
+        if not os.path.isfile(img_path):
+            continue
 
-    results = recognize_faces(
-        frame, detector, recognizer, embeddings_array, labels_list)
+        frame = cv2.imread(img_path)
+        if frame is None:
+            print(f"[WARN] Impossibile leggere {img_path}")
+            continue
 
-    # Disegna bounding box
-    for r in results:
-        x1, y1, x2, y2 = r["bbox"]
-        name = r["name"]
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        cv2.putText(frame, name, (x1, y1-10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        results = recognize_faces(
+            frame, detector, recognizer, embeddings_array, labels_list)
 
-    cv2.imshow("Face Recognition", frame)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+        # Disegna bounding box e nome
+        for r in results:
+            x1, y1, x2, y2 = r["bbox"]
+            name = r["name"]
+            confidence = r["confidence"]
+
+            draw_label(frame, name, confidence, (x1, y1, x2, y2), font_scale=2)
+
+        # Mostra immagine classificata
+        frame = resize_max(frame, max_dim=800)
+        cv2.imshow(f"Classified: {fname}", frame)
+        cv2.waitKey(0)  # premi un tasto per passare all'immagine successiva
+        cv2.destroyAllWindows()
+
     detector.close()
 
 
