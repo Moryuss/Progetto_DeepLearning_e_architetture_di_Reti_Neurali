@@ -27,13 +27,16 @@ class FaceDetector:
         results = self.model(frame, conf=self.conf, verbose=False)
 
         bboxes = []
+        scores = []
         for result in results:
             for box in result.boxes:
                 # Coordinate come float e poi convertite in int
                 x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
                 bboxes.append((x1, y1, x2, y2))
+                # score di confidenza
+                scores.append(box.conf[0].item())
 
-        return bboxes
+        return bboxes, scores
 
     def detect_with_keypoints(self, frame):
         """

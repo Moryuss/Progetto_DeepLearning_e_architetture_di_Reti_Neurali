@@ -22,14 +22,14 @@ try:
         if frame is None:
             break
 
-        # Il metodo .detect() restituisce (x1, y1, x2, y2)
-        bboxes = detector.detect(frame)
+        # Il metodo .detect() restituisce (x1, y1, x2, y2) e scores
+        bboxes, scores = detector.detect(frame)
 
         # Disegna bounding box
         for (x1, y1, x2, y2) in bboxes:
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
             # Opzionale: aggiungi una label
-            cv2.putText(frame, "Face", (x1, y1 - 10),
+            cv2.putText(frame, f"Face {scores[0]:.2f}", (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
         # Mostra il frame
