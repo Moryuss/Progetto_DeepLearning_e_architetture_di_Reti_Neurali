@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+import os
+import torch
 
 
 def crop_face(image, bbox, margin=0):
@@ -73,3 +75,58 @@ def preprocess_for_recognizer(image, input_size):
     img = np.expand_dims(img, axis=0)
 
     return img
+
+
+def load_dataset_embeddings(dataset_dir: str):
+    """
+    Carica tutti gli embeddings del dataset in memoria.
+    Ritorna:
+        embeddings_list: lista di np.array
+        labels_list: lista di nomi corrispondenti
+    """
+    embeddings_list = []
+    labels_list = []
+
+    for person_name in os.listdir(dataset_dir):
+        person_path = os.path.join(dataset_dir, person_name)
+        npz_path = os.path.join(person_path, "embeddings.npz")
+        if os.path.exists(npz_path):
+            data = np.load(npz_path)
+            for fname, emb in data.items():
+                embeddings_list.append(emb)
+                labels_list.append(person_name)
+
+    if embeddings_list:
+        embeddings_array = np.stack(embeddings_list)
+    else:
+        embeddings_array = np.array([])
+
+    return embeddings_array, labels_list
+
+
+def recognize_faces(frame, detector, recognizer, embeddings_array, labels_list, threshold=0.8):
+    """
+    Rileva volti, calcola embedding, confronta con dataset.
+    Restituisce lista di dict con bbox e nome
+    """
+    faces = detector.detect(frame)
+    results = []
+
+    for face in faces:
+        (x1, y1, x2, y2) = face['bbox']
+        face_crop = frame[y1:y2, x1:x2]
+        face_tensor = recognizer._preprocess(face_crop)
+        with torch.no_grad():
+            emb = recognizer.model(face_tensor).cpu().numpy().flatten()
+
+        name = "Unknown"
+        if embeddings_array.size > 0:
+            # Calcola distanza euclidea
+            dists = np.linalg.norm(embeddings_array - emb, axis=1)
+            min_idx = np.argmin(dists)
+            if dists[min_idx] < threshold:
+                name = labels_list[min_idx]
+
+        results.append({"bbox": (x1, y1, x2, y2), "name": name})
+
+    return results

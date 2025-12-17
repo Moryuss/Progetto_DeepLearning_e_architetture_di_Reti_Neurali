@@ -34,6 +34,7 @@ class FaceRecognizer:
 
         # Carica i pesi
         state_dict = torch.load(model_path, map_location=self.device)
+
         # Rimuovi eventuali pesi della testa di classificazione. Dato che voglio solo embedding
         state_dict = {k: v for k, v in state_dict.items()
                       if not k.startswith("logits.")}
