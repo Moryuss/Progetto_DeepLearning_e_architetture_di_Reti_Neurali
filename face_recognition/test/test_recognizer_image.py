@@ -2,13 +2,13 @@ import cv2
 import numpy as np
 import os
 
-from detector import FaceDetector
-from recognizer import FaceRecognizer
+from src.detector import FaceDetector
+from src.recognizer import FaceRecognizer
 from facenet_pytorch import InceptionResnetV1
 
 
 def main():
-    image_path = "data/test_images/matteo_test_image.jpg"
+    image_path = "data/test_image/matteo_test_image.jpg"
 
     if not os.path.exists(image_path):
         print(f"File non trovato: {image_path}")
@@ -21,7 +21,7 @@ def main():
 
     # === Init detector ===
     detector = FaceDetector(
-        model_path="model/face_detection/yolo11_nano.pt",
+        model_path="models/face_detection/yolo11_nano.pt",
         min_detection_confidence=0.5
     )
 
@@ -34,12 +34,15 @@ def main():
 
     faces = detector.detect(image)
 
-    for (x1, y1, x2, y2) in faces:
+    for face in faces:
+        print(face)
+        (x1, y1, x2, y2) = face['bbox']
         face_crop = image[y1:y2, x1:x2]
         if face_crop.size == 0:
             continue
 
         embedding = recognizer.get_embedding(face_crop)
+        # per debug: deve essere circa 1
         norm = np.linalg.norm(embedding)
 
         cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)

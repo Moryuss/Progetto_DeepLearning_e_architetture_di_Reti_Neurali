@@ -9,7 +9,7 @@ from facenet_pytorch import InceptionResnetV1
 def main():
     # === Init detector ===
     detector = FaceDetector(
-        model_path="yolov8n-face.pt",
+        model_path="models/face_detection/yolo11_nano.pt",
         min_detection_confidence=0.5
     )
 
@@ -34,7 +34,8 @@ def main():
 
         faces = detector.detect(frame)
 
-        for (x1, y1, x2, y2) in faces:
+        for face in faces:
+            (x1, y1, x2, y2) = face['bbox']
             face_crop = frame[y1:y2, x1:x2]
             if face_crop.size == 0:
                 continue
