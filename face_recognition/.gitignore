@@ -2,3 +2,4 @@
 models
 data/dataset
 data/embeddings
+data/classify_images
