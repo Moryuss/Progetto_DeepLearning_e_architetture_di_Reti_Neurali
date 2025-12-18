@@ -128,22 +128,21 @@ def recognize_faces(frame, detector, recognizer, embeddings_array, labels_list, 
     for face in faces:
         (x1, y1, x2, y2) = face['bbox']
         face_crop = frame[y1:y2, x1:x2]
-        face_tensor = recognizer._preprocess(face_crop)
-        with torch.no_grad():
-            emb = recognizer.model(face_tensor).cpu().numpy().flatten()
-
         name = "Unknown"
         confidence = 0.0
 
-        if embeddings_array.size > 0:
-            dists = np.linalg.norm(embeddings_array - emb, axis=1)
-            min_idx = np.argmin(dists)
-            min_dist = dists[min_idx]
+        emb = recognizer.get_embedding(face_crop)
 
-            if min_dist < threshold:
-                name = labels_list[min_idx]
-                # confidenza normalizzata [0,1]
-                confidence = 1.0 - (min_dist / threshold)
+        if embeddings_array.size > 0:
+            # cosine similarity = dot product (embedding L2-normalizzati)
+            sims = embeddings_array @ emb  # prodotto matriciale
+            best_idx = np.argmax(sims)
+            best_sim = sims[best_idx]
+
+            if best_sim > threshold:
+                name = labels_list[best_idx]
+                # confidenza normalizzata in [0, 1]
+                confidence = (best_sim - threshold) / (1.0 - threshold)
 
         results.append({
             "bbox": (x1, y1, x2, y2),
