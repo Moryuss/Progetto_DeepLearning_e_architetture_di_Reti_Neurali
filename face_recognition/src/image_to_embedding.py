@@ -73,11 +73,7 @@ def process_dataset(dataset_dir: str,
             x1, y1, x2, y2 = faces[0]["bbox"]
             face_crop = img[y1:y2, x1:x2]
 
-            face_tensor = recognizer._preprocess(face_crop)
-
-            with torch.no_grad():
-                emb = recognizer.model(face_tensor)
-                emb = emb.cpu().numpy().flatten()
+            emb = recognizer.get_embedding(face_crop)
 
             embeddings[fname] = emb
 

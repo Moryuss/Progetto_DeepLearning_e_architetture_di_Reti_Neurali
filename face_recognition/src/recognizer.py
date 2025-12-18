@@ -68,12 +68,15 @@ class FaceRecognizer:
         face_tensor = self._preprocess(face_bgr)
 
         with torch.no_grad():
+
             embedding = self.model(face_tensor)
 
-        embedding = embedding.cpu().numpy()[0]
-        embedding = embedding / np.linalg.norm(embedding)
+            embedding = embedding.cpu().numpy()[0]
+            norm = np.linalg.norm(embedding)
 
-        return embedding
+            embedding = embedding / norm if norm > 0 else embedding
+
+            return embedding
 
     def close(self):
         """Libera il modello"""

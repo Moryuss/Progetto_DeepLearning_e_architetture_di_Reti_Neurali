@@ -117,7 +117,7 @@ def load_dataset_embeddings(dataset_dir: str):
     return embeddings_array, labels_list
 
 
-def recognize_faces(frame, detector, recognizer, embeddings_array, labels_list, threshold=0.8):
+def recognize_faces(frame, detector, recognizer, embeddings_array, labels_list, threshold=0.60):
     """
     Rileva volti, calcola embedding, confronta con dataset.
     Restituisce lista di dict con bbox, nome e confidence
