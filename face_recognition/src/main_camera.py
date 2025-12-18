@@ -46,7 +46,7 @@ def main():
             name = r["name"]
             confidence = r["confidence"]
             draw_label(frame, name, confidence, (x1, y1, x2, y2),
-                       font_scale=1, color=(255, 0, 0))
+                       font_scale=1, color=(0, 255, 0), thickness=2)
 
         cv2.imshow("Face Recognition", frame)
         if cv2.waitKey(1) & 0xFF == 27:  # ESC per uscire

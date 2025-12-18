@@ -44,7 +44,8 @@ def main():
             name = r["name"]
             confidence = r["confidence"]
 
-            draw_label(frame, name, confidence, (x1, y1, x2, y2), font_scale=2)
+            draw_label(frame, name, confidence, (x1, y1, x2, y2),
+                       font_scale=3, thickness=4)
 
         # Mostra immagine classificata
         frame = resize_max(frame, max_dim=800)

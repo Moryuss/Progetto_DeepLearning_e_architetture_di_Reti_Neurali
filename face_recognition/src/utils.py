@@ -154,7 +154,7 @@ def recognize_faces(frame, detector, recognizer, embeddings_array, labels_list, 
     return results
 
 
-def draw_label(frame, name, confidence, bbox, color=(0, 255, 0), font_scale=2):
+def draw_label(frame, name, confidence, bbox, color=(0, 255, 0), font_scale=2, thickness=2):
     """
     Disegna un rettangolo e il nome con confidenza sopra il volto.
     name: stringa del nome
@@ -164,10 +164,6 @@ def draw_label(frame, name, confidence, bbox, color=(0, 255, 0), font_scale=2):
     x1, y1, x2, y2 = bbox
     w, h = x2 - x1, y2 - y1
 
-    # Parametri fissi leggibili
-    font_scale = font_scale
-    thickness = 2
-
     # Testo
     label_text = f"{name} ({confidence:.2f})"
 
@@ -176,7 +172,7 @@ def draw_label(frame, name, confidence, bbox, color=(0, 255, 0), font_scale=2):
 
     # Calcola dimensione testo
     text_size, _ = cv2.getTextSize(
-        label_text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)
+        label_text, cv2.FONT_HERSHEY_DUPLEX, font_scale, thickness)
     text_w, text_h = text_size
 
     # Posizione testo sopra il volto
