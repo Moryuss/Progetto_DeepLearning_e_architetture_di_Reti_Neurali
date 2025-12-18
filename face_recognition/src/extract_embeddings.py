@@ -45,6 +45,7 @@ def extract_embeddings(
             metadata["skipped_images"].append(fname)
             continue
 
+        # estrae faccia
         faces = detector.detect(img)
 
         if len(faces) != 1:
@@ -54,6 +55,7 @@ def extract_embeddings(
         x1, y1, x2, y2 = faces[0]["bbox"]
         face_crop = img[y1:y2, x1:x2]
 
+        # estrae embedding
         emb = recognizer.get_embedding(face_crop)
 
         embeddings[fname] = emb
@@ -87,10 +89,13 @@ def main():
         model_path=str(recognizer_model_path)
     )
 
+    # embedding di persone note e ignote
+    # NOTA se non vuoi runnare quello delle immagini di people che sono molte, commentalo easy
     extract_embeddings(people_dir, detector, recognizer,
                        people_embeddings_path, "metadata_people.json")
     extract_embeddings(known_people_dir, detector, recognizer,
                        known_embeddings_path, "metadata_known.json")
+
     detector.close()
 
 

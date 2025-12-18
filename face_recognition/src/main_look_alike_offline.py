@@ -1,7 +1,7 @@
 import os
 import cv2
 import numpy as np
-from src.utils import load_embeddings
+from src.utils import load_embeddings, load_image_safe, find_top_k, resize_height
 
 from src.config import (
     PEOPLE_EMB_PATH,
@@ -15,30 +15,6 @@ TOP_K = 3
 SIM_THRESHOLD = 0.65
 MAX_IMG_SIZE = 300
 # ----------------------------------------
-
-
-def find_top_k(query_emb, db_embs, db_names, k):
-    sims = db_embs @ query_emb
-    idxs = np.argsort(sims)[::-1][:k]
-
-    return [
-        (db_names[i], float(sims[i]))
-        for i in idxs
-    ]
-
-
-def load_image_safe(path, max_size=None):
-    img = cv2.imread(path)
-    if img is None:
-        return None
-
-    if max_size:
-        h, w = img.shape[:2]
-        scale = max_size / max(h, w)
-        if scale < 1:
-            img = cv2.resize(img, (int(w * scale), int(h * scale)))
-
-    return img
 
 
 def main():
@@ -77,7 +53,9 @@ def main():
         if q_img is None:
             continue
 
-        rows = [q_img]
+        # per avere una altezza standard altrimenti error
+        rows = [resize_height(q_img, MAX_IMG_SIZE)]
+
         for name, sim in top_matches:
             img = load_image_safe(
                 os.path.join(PEOPLE_DIR, name),
@@ -85,6 +63,8 @@ def main():
             )
             if img is None:
                 continue
+
+            img = resize_height(img, MAX_IMG_SIZE)
 
             cv2.putText(
                 img,

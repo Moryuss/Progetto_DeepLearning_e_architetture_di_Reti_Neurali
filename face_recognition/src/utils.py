@@ -196,3 +196,38 @@ def draw_label(frame, name, confidence, bbox, color=(0, 255, 0), font_scale=2, t
     # Scrivi testo
     cv2.putText(frame, label_text, (text_x, text_y),
                 cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, thickness)
+
+# similarity methods
+
+
+def load_image_safe(path, max_size=None):
+    img = cv2.imread(path)
+    if img is None:
+        return None
+
+    if max_size:
+        h, w = img.shape[:2]
+        scale = max_size / max(h, w)
+        if scale < 1:
+            img = cv2.resize(img, (int(w * scale), int(h * scale)))
+
+    return img
+
+# per la rappresentazione con cv2
+
+
+def resize_height(img, target_height):
+    h, w = img.shape[:2]
+    scale = target_height / h
+    new_w = int(w * scale)
+    return cv2.resize(img, (new_w, target_height))
+
+
+def find_top_k(query_emb, db_embs, db_names, k):
+    sims = db_embs @ query_emb
+    idxs = np.argsort(sims)[::-1][:k]
+    return [
+        (db_names[i], float(sims[i]))
+        for i in idxs
+    ]
+##
