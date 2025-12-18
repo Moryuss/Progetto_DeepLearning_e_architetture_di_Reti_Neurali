@@ -7,6 +7,12 @@ import torch
 from src.detector import FaceDetector
 from src.recognizer import FaceRecognizer
 
+from src.config import (
+    DATASET_DIR,
+    DETECTOR_MODEL_PATH,
+    RECOGNIZER_MODEL_PATH
+)
+
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 
@@ -99,20 +105,21 @@ def process_dataset(dataset_dir: str,
 
 
 def main():
-    dataset_dir = "data/dataset"
-    yolo_model_path = "models/face_detection/yolo11_nano.pt"
-    recognizer_model_path = "models/face_recognition/vggface2.pt"
+    # se danno errore --> str(...)
+    dataset_dir = DATASET_DIR
+    detector_model_path = DETECTOR_MODEL_PATH
+    recognizer_model_path = RECOGNIZER_MODEL_PATH
 
-    detector = FaceDetector(model_path=yolo_model_path)
+    detector = FaceDetector(model_path=str(detector_model_path))
 
     from facenet_pytorch import InceptionResnetV1
     backbone = InceptionResnetV1(pretrained=None)
     recognizer = FaceRecognizer(
         model=backbone,
-        model_path=recognizer_model_path
+        model_path=str(recognizer_model_path)
     )
 
-    process_dataset(dataset_dir, detector, recognizer)
+    process_dataset(str(dataset_dir), detector, recognizer)
     detector.close()
 
 

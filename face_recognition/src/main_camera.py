@@ -7,12 +7,22 @@ from src.recognizer import FaceRecognizer
 from src.utils import recognize_faces, load_dataset_embeddings, draw_label
 from facenet_pytorch import InceptionResnetV1
 
+from src.config import (
+    DATASET_DIR,
+    DETECTOR_MODEL_PATH,
+    RECOGNIZER_MODEL_PATH,
+    CLASSIFY_IMAGES_DIR,
+    EMBEDDINGS_DIR
+)
+
 
 def main():
     # Config
-    dataset_dir = "data/dataset"
-    yolo_model_path = "models/face_detection/yolo11_nano.pt"
-    recognizer_model_path = "models/face_recognition/vggface2.pt"
+    dataset_dir = str(DATASET_DIR)
+    yolo_model_path = str(DETECTOR_MODEL_PATH)
+    recognizer_model_path = str(RECOGNIZER_MODEL_PATH)
+    # cartella con immagini da classificare
+    images_dir = str(CLASSIFY_IMAGES_DIR)
 
     # Inizializza detector e recognizer
     detector = FaceDetector(model_path=yolo_model_path)
