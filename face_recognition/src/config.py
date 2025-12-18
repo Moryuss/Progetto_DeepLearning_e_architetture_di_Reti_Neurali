@@ -13,3 +13,13 @@ RECOGNIZER_MODEL_PATH = BASE_DIR / "models" / "face_recognition" / "vggface2.pt"
 
 # output
 EMBEDDINGS_DIR = BASE_DIR / "data" / "embeddings"
+
+
+# similarity
+PEOPLE_EMB_PATH = BASE_DIR / "data" / \
+    "similarity_images" / "embeddings" / "people.npz"
+KNOWN_EMB_PATH = BASE_DIR / "data" / \
+    "similarity_images" / "embeddings" / "known.npz"
+
+PEOPLE_DIR = BASE_DIR / "data" / "similarity_images" / "people"
+KNOWN_PEOPLE_DIR = BASE_DIR / "data" / "similarity_images" / "known_people"

@@ -2,6 +2,9 @@ import torch
 import numpy as np
 import cv2
 from src.utils import preprocess_for_recognizer
+from src.config import (
+    RECOGNIZER_MODEL_PATH
+)
 
 
 class FaceRecognizer:
@@ -13,7 +16,7 @@ class FaceRecognizer:
     def __init__(
         self,
         model,
-        model_path: str = "models/face_recognition/vggface2.pt",
+        model_path: str = str(RECOGNIZER_MODEL_PATH),
         device: str | None = None,
         image_size: int = 160
     ):

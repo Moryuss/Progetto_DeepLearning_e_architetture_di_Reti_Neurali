@@ -1,9 +1,12 @@
 import cv2
 from ultralytics import YOLO
+from src.config import (
+    DETECTOR_MODEL_PATH,
+)
 
 
 class FaceDetector:
-    def __init__(self, model_path: str = 'yolov8n-face.pt', min_detection_confidence: float = 0.5):
+    def __init__(self, model_path: str = str(DETECTOR_MODEL_PATH), min_detection_confidence: float = 0.5):
         """
         FaceDetector basato su YOLO (Ultralytics).
 

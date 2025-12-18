@@ -117,6 +117,17 @@ def load_dataset_embeddings(dataset_dir: str):
     return embeddings_array, labels_list
 
 
+def load_embeddings(npz_path):
+    '''
+    Carica embeddings da file .npz, non conitene nomi personali ma solo nomi file immagine.
+    Ritorna: embeddings_array, names_list    
+    '''
+    data = np.load(npz_path)
+    names = list(data.keys())
+    embs = np.vstack([data[k] for k in names])
+    return embs, names
+
+
 def recognize_faces(frame, detector, recognizer, embeddings_array, labels_list, threshold=0.60):
     """
     Rileva volti, calcola embedding, confronta con dataset.
