@@ -14,6 +14,7 @@ def main():
     yolo_model_path = "models/face_detection/yolo11_nano.pt"
     recognizer_model_path = "models/face_recognition/vggface2.pt"
     images_dir = "data/classify_images"  # cartella con immagini da classificare
+    # images_dir = "data/dataset/Delia_Confortini/augmented"
 
     # Inizializza detector e recognizer
     detector = FaceDetector(model_path=yolo_model_path)
