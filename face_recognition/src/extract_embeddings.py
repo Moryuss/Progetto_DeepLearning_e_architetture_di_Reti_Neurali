@@ -91,8 +91,8 @@ def main():
 
     # embedding di persone note e ignote
     # NOTA se non vuoi runnare quello delle immagini di people che sono molte, commentalo easy
-    extract_embeddings(people_dir, detector, recognizer,
-                       people_embeddings_path, "metadata_people.json")
+   # extract_embeddings(people_dir, detector, recognizer,
+   #                    people_embeddings_path, "metadata_people.json")
     extract_embeddings(known_people_dir, detector, recognizer,
                        known_embeddings_path, "metadata_known.json")
 
