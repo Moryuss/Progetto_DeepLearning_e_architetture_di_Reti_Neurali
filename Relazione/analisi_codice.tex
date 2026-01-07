@@ -1,0 +1,161 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[italian]{babel}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+
+\geometry{a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Analisi Codice Face Recognition},
+    pdfpagemode=FullScreen,
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Analisi Codice Sorgente}
+\fancyhead[R]{Progetto di Riconoscimento Facciale}
+\fancyfoot[C]{\thepage}
+
+\title{\textbf{Analisi del Codice Sorgente \ Progetto di Riconoscimento Facciale}}
+\author{Generato da Gemini}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Introduzione}
+Questo documento analizza la struttura del codice sorgente del progetto di riconoscimento facciale. L\'obiettivo è descrivere lo scopo di ogni file Python nella directory \texttt{src/} e mappare le relazioni e le dipendenze tra di essi per fornire una visione chiara dell\'architettura complessiva.
+
+\section{Architettura Generale}
+Il sistema è suddiviso in tre aree principali:
+\begin{enumerate}
+    \item \textbf{Componenti Core}: Moduli riutilizzabili che forniscono funzionalità atomiche come il rilevamento di volti (\texttt{detector.py}) e la generazione di embedding (\texttt{recognizer.py}).
+    \item \textbf{Script di Preparazione Dati}: Programmi utilizzati per processare i dati offline. Questo include l\'aumento dei dati (\texttt{augment.py}) e l\'estrazione degli embedding da salvare su disco (\texttt{image\_to\_embedding.py}, \texttt{extract\_embeddings.py}).
+    \item \textbf{Script Eseguibili (Entrypoint)}: I programmi principali che l\'utente avvia per eseguire le diverse funzionalità del progetto, come il riconoscimento da webcam (\texttt{main\_camera.py}) o la ricerca di sosia (\texttt{main\_look\_alike\_*.py}).
+\end{enumerate}
+Il file \texttt{config.py} agisce come un punto di configurazione centrale, fornendo percorsi e costanti a tutti gli altri moduli.
+
+\newpage
+
+\section{Analisi dei File Sorgente}
+
+\subsection{config.py}
+\begin{description}
+    \item[Scopo:] Centralizza tutte le costanti e i percorsi utilizzati nel progetto. Definisce dove trovare i modelli, i dataset, le immagini da classificare e dove salvare gli output come gli embedding.
+    \item[Relazioni:] Viene importato da quasi tutti gli altri file del progetto che necessitano di accedere a risorse del filesystem. Questo approccio disaccoppia la logica del codice dai percorsi specifici.
+\end{description}
+
+\subsection{detector.py}
+\begin{description}
+    \item[Scopo:] Contiene la classe \texttt{FaceDetector}, che utilizza un modello YOLO (caricato tramite la libreria \texttt{ultralytics}) per individuare i volti all\'interno di un\'immagine.
+    \item[Funzionalità:] Fornisce metodi per rilevare i volti restituendo i loro riquadri di delimitazione (bounding box) e, opzionalmente, i punti di riferimento facciali (keypoints).
+    \item[Relazioni:] È una dipendenza fondamentale per tutti gli script che devono processare un volto, come \texttt{image\_to\_embedding.py}, \texttt{extract\_embeddings.py} e tutti i file \texttt{main\_*.py}.
+\end{description}
+
+\subsection{recognizer.py}
+\begin{description}
+    \item[Scopo:] Contiene la classe \texttt{FaceRecognizer}. Il suo compito è prendere un\'immagine di un volto (già ritagliata) e trasformarla in un vettore numerico ad alta dimensionalità, chiamato \"embedding\".
+    \item[Funzionalità:] Utilizza un modello di deep learning pre-addestrato (basato su architetture come FaceNet/VGGFace2) per generare un embedding normalizzato (L2). Questi embedding possono essere poi confrontati tramite similarità cosenica per determinare se due volti appartengono alla stessa persona.
+    \item[Relazioni:] È una dipendenza chiave per \texttt{image\_to\_embedding.py}, \texttt{extract\_embeddings.py} e per tutti gli script \texttt{main\_*.py} che eseguono il riconoscimento o la ricerca di similarità.
+\end{description}
+
+\subsection{utils.py}
+\begin{description}
+    \item[Scopo:] Libreria di funzioni di utilità generiche, utilizzate in più parti del progetto per evitare la duplicazione del codice.
+    \item[Funzionalità:]
+    \begin{itemize}
+        \item Funzioni di preprocessing delle immagini per adattarle agli input dei modelli.
+        \item Funzioni per caricare gli embedding salvati su file \texttt{.npz}.
+        \item La funzione \texttt{recognize\_faces}, che orchestra il rilevamento e il riconoscimento su un\'immagine.
+        \item Funzioni per disegnare etichette e riquadri sulle immagini di output.
+        \item Funzioni per la ricerca dei top-k volti più simili.
+    \end{itemize}
+    \item[Relazioni:] Importato da tutti i file \texttt{main\_*.py} e da altri script che necessitano di queste funzionalità ausiliarie.
+\end{description}
+
+\subsection{augment.py}
+\begin{description}
+    \item[Scopo:] Script per l\'aumento dei dati (data augmentation). Aumenta il numero di immagini nel dataset applicando trasformazioni casuali (flip, luminosità, crop) alle immagini originali.
+    \item[Funzionalità:] Per ogni persona nel dataset, controlla se il numero di immagini \"aumentate\" è inferiore a una soglia e, in caso affermativo, ne genera di nuove.
+    \item[Relazioni:] È uno script di preparazione dati. Non è una dipendenza di altri moduli, ma il suo output (le immagini aumentate) viene processato da \texttt{image\_to\_embedding.py}.
+\end{description}
+
+\subsection{image\_to\_embedding.py}
+\begin{description}
+    \item[Scopo:] Script cruciale per la preparazione del database di riconoscimento. Scansiona il dataset (immagini originali e aumentate), rileva i volti, calcola i loro embedding e li salva in un file compresso \texttt{embeddings.npz} per ogni persona.
+    \item[Flusso:]
+    \begin{enumerate}
+        \item Itera su ogni persona nel dataset.
+        \item Per ogni immagine, usa \texttt{detector.py} per trovare il volto.
+        \item Passa il volto ritagliato a \texttt{recognizer.py} per ottenere l\'embedding.
+        \item Salva tutti gli embedding di una persona in un unico file \texttt{.npz}.
+    \end{enumerate}
+    \item[Relazioni:] Utilizza \texttt{detector.py} e \texttt{recognizer.py}. Produce i file \texttt{.npz} che sono l\'input fondamentale per \texttt{main\_camera.py} e \texttt{main\_image.py}.
+\end{description}
+
+\subsection{extract\_embeddings.py}
+\begin{description}
+    \item[Scopo:] Simile a \texttt{image\_to\_embedding.py}, ma specifico per la funzionalità \"look-alike\". Processa due cartelle separate (\texttt{people} e \texttt{known\_people}) e crea due database di embedding distinti (\texttt{people.npz} e \texttt{known.npz}).
+    \item[Relazioni:] Utilizza \texttt{detector.py} e \texttt{recognizer.py}. I suoi file di output sono usati da \texttt{main\_look\_alike\_offline.py} e \texttt{main\_look\_alike\_online.py}.
+\end{description}
+
+\subsection{main\_camera.py}
+\begin{description}
+    \item[Scopo:] Entrypoint principale per il riconoscimento facciale in tempo reale tramite webcam.
+    \item[Flusso:]
+    \begin{enumerate}
+        \item Carica in memoria tutti gli embedding del dataset usando \texttt{utils.load\_dataset\_embeddings}.
+        \item In un ciclo infinito, cattura un frame dalla webcam.
+        \item Usa la funzione \texttt{utils.recognize\_faces} (che a sua volta usa \texttt{detector} e \texttt{recognizer}) per trovare e identificare i volti nel frame.
+        \item Disegna i risultati sul frame e lo mostra a schermo.
+    \end{enumerate}
+    \item[Relazioni:] Dipende da \texttt{detector.py}, \texttt{recognizer.py} e \texttt{utils.py}.
+\end{description}
+
+\subsection{main\_image.py}
+\begin{description}
+    \item[Scopo:] Entrypoint per il riconoscimento facciale su un set di immagini statiche.
+    \item[Flusso:] Simile a \texttt{main\_camera.py}, ma invece di un ciclo sulla webcam, itera sui file di immagine presenti in una cartella specificata in \texttt{config.py}.
+    \item[Relazioni:] Dipende da \texttt{detector.py}, \texttt{recognizer.py} e \texttt{utils.py}.
+\end{description}
+
+\subsection{main\_look\_alike\_offline.py}
+\begin{description}
+    \item[Scopo:] Esegue una ricerca \"look-alike\" (sosia) offline. Confronta ogni persona nel database \"known\" con tutte le persone nel database \"people\" per trovare le corrispondenze più simili.
+    \item[Flusso:] Carica i due database di embedding pre-calcolati da \texttt{extract\_embeddings.py} e calcola la similarità cosenica per trovare i top-K match per ogni persona \"known\".
+    \item[Relazioni:] Dipende da \texttt{utils.py} per caricare gli embedding e trovare i match. Non necessita di \texttt{detector} o \texttt{recognizer} perché lavora su embedding già esistenti.
+\end{description}
+
+\subsection{main\_look\_alike\_online.py}
+\begin{description}
+    \item[Scopo:] Esegue una ricerca \"look-alike\" in tempo reale. Rileva un volto dalla webcam e cerca la persona più simile all\'interno del database \"people\".
+    \item[Flusso:]
+    \begin{enumerate}
+        \item Carica il database di embedding \"people\".
+        \item In un ciclo, cattura un frame, rileva un volto con \texttt{detector.py} e calcola il suo embedding al volo con \texttt{recognizer.py}.
+        \item Confronta l\'embedding appena calcolato con quelli del database per trovare il miglior match.
+    \end{enumerate}
+    \item[Relazioni:] Dipende da \texttt{detector.py}, \texttt{recognizer.py} e \texttt{utils.py}.
+\end{description}
+
+\subsection{camera.py e old\_augment.py}
+\begin{description}
+    \item[Scopo:]
+    \begin{itemize}
+        \item \texttt{camera.py}: Fornisce una semplice classe wrapper per \texttt{cv2.VideoCapture}. Attualmente non sembra essere utilizzata da nessuno degli script principali, che chiamano direttamente \texttt{cv2}. Potrebbe essere un residuo o un componente per usi futuri.
+        \item \texttt{old\_augment.py}: Sembra una versione precedente e più semplice di \texttt{augment.py}. Probabilmente è stato deprecato in favore della versione più robusta.
+    \end{itemize}
+\end{description}
+
+\end{document}
