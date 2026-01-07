@@ -25,7 +25,7 @@
 \fancyfoot[C]{\thepage}
 
 \title{\textbf{Analisi del Codice Sorgente \ Progetto di Riconoscimento Facciale}}
-\author{Generato da Gemini}
+\author{Ghidini Matteo}
 \date{\today}
 
 \begin{document}
@@ -35,14 +35,14 @@
 \newpage
 
 \section{Introduzione}
-Questo documento analizza la struttura del codice sorgente del progetto di riconoscimento facciale. L\'obiettivo è descrivere lo scopo di ogni file Python nella directory \texttt{src/} e mappare le relazioni e le dipendenze tra di essi per fornire una visione chiara dell\'architettura complessiva.
+Questo documento analizza la struttura del codice sorgente del progetto di riconoscimento facciale. L'obiettivo è descrivere lo scopo di ogni file Python nella directory \texttt{src/} e mappare le relazioni e le dipendenze tra di essi per fornire una visione chiara dell'architettura complessiva.
 
 \section{Architettura Generale}
 Il sistema è suddiviso in tre aree principali:
 \begin{enumerate}
     \item \textbf{Componenti Core}: Moduli riutilizzabili che forniscono funzionalità atomiche come il rilevamento di volti (\texttt{detector.py}) e la generazione di embedding (\texttt{recognizer.py}).
-    \item \textbf{Script di Preparazione Dati}: Programmi utilizzati per processare i dati offline. Questo include l\'aumento dei dati (\texttt{augment.py}) e l\'estrazione degli embedding da salvare su disco (\texttt{image\_to\_embedding.py}, \texttt{extract\_embeddings.py}).
-    \item \textbf{Script Eseguibili (Entrypoint)}: I programmi principali che l\'utente avvia per eseguire le diverse funzionalità del progetto, come il riconoscimento da webcam (\texttt{main\_camera.py}) o la ricerca di sosia (\texttt{main\_look\_alike\_*.py}).
+    \item \textbf{Script di Preparazione Dati}: Programmi utilizzati per processare i dati offline. Questo include l'aumento dei dati (\texttt{augment.py}) e l'estrazione degli embedding da salvare su disco (\texttt{image\_to\_embedding.py}, \texttt{extract\_embeddings.py}).
+    \item \textbf{Script Eseguibili (Entrypoint)}: I programmi principali che l'utente avvia per eseguire le diverse funzionalità del progetto, come il riconoscimento da webcam (\texttt{main\_camera.py}) o la ricerca di sosia (\texttt{main\_look\_alike\_*.py}).
 \end{enumerate}
 Il file \texttt{config.py} agisce come un punto di configurazione centrale, fornendo percorsi e costanti a tutti gli altri moduli.
 
@@ -58,14 +58,14 @@ Il file \texttt{config.py} agisce come un punto di configurazione centrale, forn
 
 \subsection{detector.py}
 \begin{description}
-    \item[Scopo:] Contiene la classe \texttt{FaceDetector}, che utilizza un modello YOLO (caricato tramite la libreria \texttt{ultralytics}) per individuare i volti all\'interno di un\'immagine.
+    \item[Scopo:] Contiene la classe \texttt{FaceDetector}, che utilizza un modello YOLO (caricato tramite la libreria \texttt{ultralytics}) per individuare i volti all'interno di un'immagine.
     \item[Funzionalità:] Fornisce metodi per rilevare i volti restituendo i loro riquadri di delimitazione (bounding box) e, opzionalmente, i punti di riferimento facciali (keypoints).
     \item[Relazioni:] È una dipendenza fondamentale per tutti gli script che devono processare un volto, come \texttt{image\_to\_embedding.py}, \texttt{extract\_embeddings.py} e tutti i file \texttt{main\_*.py}.
 \end{description}
 
 \subsection{recognizer.py}
 \begin{description}
-    \item[Scopo:] Contiene la classe \texttt{FaceRecognizer}. Il suo compito è prendere un\'immagine di un volto (già ritagliata) e trasformarla in un vettore numerico ad alta dimensionalità, chiamato \"embedding\".
+    \item[Scopo:] Contiene la classe \texttt{FaceRecognizer}. Il suo compito è prendere un'immagine di un volto (già ritagliata) e trasformarla in un vettore numerico ad alta dimensionalità, chiamato "embedding".
     \item[Funzionalità:] Utilizza un modello di deep learning pre-addestrato (basato su architetture come FaceNet/VGGFace2) per generare un embedding normalizzato (L2). Questi embedding possono essere poi confrontati tramite similarità cosenica per determinare se due volti appartengono alla stessa persona.
     \item[Relazioni:] È una dipendenza chiave per \texttt{image\_to\_embedding.py}, \texttt{extract\_embeddings.py} e per tutti gli script \texttt{main\_*.py} che eseguono il riconoscimento o la ricerca di similarità.
 \end{description}
@@ -77,7 +77,7 @@ Il file \texttt{config.py} agisce come un punto di configurazione centrale, forn
     \begin{itemize}
         \item Funzioni di preprocessing delle immagini per adattarle agli input dei modelli.
         \item Funzioni per caricare gli embedding salvati su file \texttt{.npz}.
-        \item La funzione \texttt{recognize\_faces}, che orchestra il rilevamento e il riconoscimento su un\'immagine.
+        \item La funzione \texttt{recognize\_faces}, che orchestra il rilevamento e il riconoscimento su un'immagine.
         \item Funzioni per disegnare etichette e riquadri sulle immagini di output.
         \item Funzioni per la ricerca dei top-k volti più simili.
     \end{itemize}
@@ -86,8 +86,8 @@ Il file \texttt{config.py} agisce come un punto di configurazione centrale, forn
 
 \subsection{augment.py}
 \begin{description}
-    \item[Scopo:] Script per l\'aumento dei dati (data augmentation). Aumenta il numero di immagini nel dataset applicando trasformazioni casuali (flip, luminosità, crop) alle immagini originali.
-    \item[Funzionalità:] Per ogni persona nel dataset, controlla se il numero di immagini \"aumentate\" è inferiore a una soglia e, in caso affermativo, ne genera di nuove.
+    \item[Scopo:] Script per l'aumento dei dati (data augmentation). Aumenta il numero di immagini nel dataset applicando trasformazioni casuali (flip, luminosità, crop) alle immagini originali.
+    \item[Funzionalità:] Per ogni persona nel dataset, controlla se il numero di immagini agumentate è inferiore a una soglia e, in caso affermativo, ne genera di nuove.
     \item[Relazioni:] È uno script di preparazione dati. Non è una dipendenza di altri moduli, ma il suo output (le immagini aumentate) viene processato da \texttt{image\_to\_embedding.py}.
 \end{description}
 
@@ -98,15 +98,15 @@ Il file \texttt{config.py} agisce come un punto di configurazione centrale, forn
     \begin{enumerate}
         \item Itera su ogni persona nel dataset.
         \item Per ogni immagine, usa \texttt{detector.py} per trovare il volto.
-        \item Passa il volto ritagliato a \texttt{recognizer.py} per ottenere l\'embedding.
+        \item Passa il volto ritagliato a \texttt{recognizer.py} per ottenere l'embedding.
         \item Salva tutti gli embedding di una persona in un unico file \texttt{.npz}.
     \end{enumerate}
-    \item[Relazioni:] Utilizza \texttt{detector.py} e \texttt{recognizer.py}. Produce i file \texttt{.npz} che sono l\'input fondamentale per \texttt{main\_camera.py} e \texttt{main\_image.py}.
+    \item[Relazioni:] Utilizza \texttt{detector.py} e \texttt{recognizer.py}. Produce i file \texttt{.npz} che sono l'input fondamentale per \texttt{main\_camera.py} e \texttt{main\_image.py}.
 \end{description}
 
 \subsection{extract\_embeddings.py}
 \begin{description}
-    \item[Scopo:] Simile a \texttt{image\_to\_embedding.py}, ma specifico per la funzionalità \"look-alike\". Processa due cartelle separate (\texttt{people} e \texttt{known\_people}) e crea due database di embedding distinti (\texttt{people.npz} e \texttt{known.npz}).
+    \item[Scopo:] Simile a \texttt{image\_to\_embedding.py}, ma specifico per la funzionalità "look-alike". Processa due cartelle separate (\texttt{people} e \texttt{known\_people}) e crea due database di embedding distinti (\texttt{people.npz} e \texttt{known.npz}).
     \item[Relazioni:] Utilizza \texttt{detector.py} e \texttt{recognizer.py}. I suoi file di output sono usati da \texttt{main\_look\_alike\_offline.py} e \texttt{main\_look\_alike\_online.py}.
 \end{description}
 
@@ -132,19 +132,19 @@ Il file \texttt{config.py} agisce come un punto di configurazione centrale, forn
 
 \subsection{main\_look\_alike\_offline.py}
 \begin{description}
-    \item[Scopo:] Esegue una ricerca \"look-alike\" (sosia) offline. Confronta ogni persona nel database \"known\" con tutte le persone nel database \"people\" per trovare le corrispondenze più simili.
-    \item[Flusso:] Carica i due database di embedding pre-calcolati da \texttt{extract\_embeddings.py} e calcola la similarità cosenica per trovare i top-K match per ogni persona \"known\".
+    \item[Scopo:] Esegue una ricerca "look-alike" (sosia) offline. Confronta ogni persona nel database "known" con tutte le persone nel database "people" per trovare le corrispondenze più simili.
+    \item[Flusso:] Carica i due database di embedding pre-calcolati da \texttt{extract\_embeddings.py} e calcola la similarità cosenica per trovare i top-K match per ogni persona "known".
     \item[Relazioni:] Dipende da \texttt{utils.py} per caricare gli embedding e trovare i match. Non necessita di \texttt{detector} o \texttt{recognizer} perché lavora su embedding già esistenti.
 \end{description}
 
 \subsection{main\_look\_alike\_online.py}
 \begin{description}
-    \item[Scopo:] Esegue una ricerca \"look-alike\" in tempo reale. Rileva un volto dalla webcam e cerca la persona più simile all\'interno del database \"people\".
+    \item[Scopo:] Esegue una ricerca "look-alike" in tempo reale. Rileva un volto dalla webcam e cerca la persona più simile all'interno del database "people".
     \item[Flusso:]
     \begin{enumerate}
-        \item Carica il database di embedding \"people\".
+        \item Carica il database di embedding "people".
         \item In un ciclo, cattura un frame, rileva un volto con \texttt{detector.py} e calcola il suo embedding al volo con \texttt{recognizer.py}.
-        \item Confronta l\'embedding appena calcolato con quelli del database per trovare il miglior match.
+        \item Confronta l'embedding appena calcolato con quelli del database per trovare il miglior match.
     \end{enumerate}
     \item[Relazioni:] Dipende da \texttt{detector.py}, \texttt{recognizer.py} e \texttt{utils.py}.
 \end{description}
@@ -158,4 +158,35 @@ Il file \texttt{config.py} agisce come un punto di configurazione centrale, forn
     \end{itemize}
 \end{description}
 
+
+\section{Flow di utilizzo applicazione}
+\subsection{Utilizzo immediato}
+Se si vuole far semplicemente partire l'applicativo basta scrivere su bash shell:\\
+\texttt{python -m src.main\_*}
+Questo farà partire una dei main presenti in src.
+\subsection{Aggiunta di persona al dataset di riconoscimento}
+Se invece si vuole aggiungere persone alla knowledge base serve fare alcuni passaggi aggiuntivi:
+\begin{enumerate}
+    \item Aggiungere alla dir \texttt{data/dataset} la dir con nome quello della persona che si vuole aggiungere alla KB
+    \item Eseguire su bash shell: \\
+    \texttt{python -m augment} \\
+    Questo agumenterà l'immagini presenti nel dataset
+    \item Per creare gli embeddings dalle immagini:
+    \texttt{python -m src.image\_to\_embedding}
+    \item Si può far partire i main\_camera o main\_image con\\
+    \texttt{python -m src.main\_*}
+\end{enumerate}
+\subsection{Aggiunta di persona al dataset per operazione Look-alike}
+Se invece si vuole aggiungere persone nel dataset dei Look-alike serve fare alcuni passaggi aggiuntivi e il primo punto cambia per modalità online (via camera) e offline (img nel dataset)
+\begin{enumerate}
+    \item Aggiungere alla dir \texttt{data/similarity\_images/known\_people} l'immagine con nome quello della persona che si vuole aggiungere alla lista di persone che si volgiono confrontare con i Look-alike
+    \item Aggiungere alla dir \texttt{data/similarity\_images/people} le immagini di persone "sconosciute" con cui si vuole fare un confronto (nota che questo passaggio è abbastanza computational intensive data la mole delle immagini. Consiglio di NON fare aggiungere e quindi ricreare gli embeddings della dir similarity\_images/people)
+    \item Per creare gli embeddings dalle immagini in similarity\_images:\\
+    \texttt{python -m src.extract\_embeddings}\\
+    Nota che di base è commentata la parte di codice che fa l'embeddings delle similarity\_images/people per sicurezza (ultime righe del file .py)
+    \item Si può far partire i main interessati al look-alike comparison con\\
+    \texttt{python -m src.main\_look\_alike\_offline}   per confrontare immagini in \\ 
+    similarity\_images/known\_people;\\
+    \texttt{python -m src.main\_look\_alike\_online}    per confrontare direttamente attraverso la camera.
+\end{enumerate}
 \end{document}
