@@ -1,0 +1,41 @@
+Cosa TENERE (riusi identico):
+
+✅ Tutto il training loop (train_one_epoch, validate, train_model_with_config)
+✅ train_multiple_configs e tutte le helper functions
+✅ load_lfw_dataset e data augmentation
+✅ Early stopping, scheduler, checkpoint saving
+✅ Plot e zip functions
+✅ extract_embeddings e load_model_from_checkpoint
+
+Cosa CAMBIARE:
+
+🔄 Solo la classe del modello (nuovo file cnn_face_embedding.py):
+
+__init__: Conv2d, MaxPool2d, BatchNorm2d invece di Linear
+forward: NON fare flatten all'inizio, ma DOPO i conv layers
+get_embedding: stesso concetto, estrai prima del classifier
+
+
+
+Cosa AGGIUNGERE nella CNN:
+
+📦 Conv blocks: Conv2d → BatchNorm2d → ReLU → MaxPool2d
+📦 Diverse architetture: shallow (2-3 conv), medium (4-5 conv), deep (6+ conv)
+📦 Kernel sizes: testa 3x3, 5x5, 7x7
+📦 Num filters: incrementa progressivamente (32→64→128→256)
+📦 Global Average Pooling (opzionale, invece di flatten totale)
+
+Nuove configurazioni CNN da testare:
+
+cnn_shallow: 2 conv blocks
+cnn_medium: 4 conv blocks
+cnn_deep: 6+ conv blocks
+cnn_large_kernels: kernel 5x5 o 7x7
+cnn_small_filters: meno filtri per layer
+cnn_optimized: best practices
+
+In pratica:
+
+Crei cnn_face_embedding.py con classe CNN
+Crei get_cnn_configs() simile a quelle DNN
+Riusi train_multiple_configs(create_cnn_model, ...) identico
