@@ -6,7 +6,7 @@ import shutil
 import subprocess
 import threading
 from pathlib import Path
-from src.config import DATASET_DIR, PEOPLE_DIR, KNOWN_PEOPLE_DIR
+from src.config import DATASET_DIR, PEOPLE_DIR, KNOWN_PEOPLE_DIR, CLASSIFY_IMAGES_DIR
 
 
 class FaceRecognitionApp:
@@ -47,6 +47,11 @@ class FaceRecognitionApp:
         self.person_name_entry.grid(
             row=1, column=1, columnspan=2, sticky=tk.W, pady=5)
 
+        # Checkbox per force reprocess
+        self.force_reprocess_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(import_frame, text="Force reprocess (ignore cache)",
+                        variable=self.force_reprocess_var).grid(row=2, column=2, sticky=tk.W)
+
         ttk.Button(import_frame, text="📁 Select Images",
                    command=self.select_images).grid(row=2, column=0, pady=5)
         ttk.Button(import_frame, text="▶️ Import & Process",
@@ -59,9 +64,23 @@ class FaceRecognitionApp:
 
         # ========== SECTION 2: Run Scripts ==========
         run_frame = ttk.LabelFrame(
-            main_frame, text="2. Run Main Scripts", padding="10")
+            main_frame, text="2. Load Images to Classify", padding="10")
         run_frame.grid(row=1, column=0, columnspan=2,
                        sticky=(tk.W, tk.E), pady=5)
+
+        ttk.Label(run_frame, text="Images for recognition:").grid(
+            row=0, column=0, sticky=tk.W)
+        ttk.Button(run_frame, text="📁 Select Images to Classify",
+                   command=self.load_classify_images).grid(row=0, column=1, padx=5, pady=5)
+        self.classify_images_label = ttk.Label(run_frame, text="No images loaded",
+                                               foreground="gray")
+        self.classify_images_label.grid(row=0, column=2, sticky=tk.W, padx=5)
+
+        # ========== SECTION 3: Run Scripts ==========
+        scripts_frame = ttk.LabelFrame(
+            main_frame, text="3. Run Main Scripts", padding="10")
+        scripts_frame.grid(row=2, column=0, columnspan=2,
+                           sticky=(tk.W, tk.E), pady=5)
 
         scripts = [
             ("📷 Camera Recognition", "src.main_camera"),
@@ -73,25 +92,27 @@ class FaceRecognitionApp:
         for i, (text, script) in enumerate(scripts):
             row = i // 2
             col = i % 2
-            ttk.Button(run_frame, text=text,
+            ttk.Button(scripts_frame, text=text,
                        command=lambda s=script: self.run_script(s),
                        width=30).grid(row=row, column=col, padx=5, pady=5)
 
-        # ========== SECTION 3: Utilities ==========
+        # ========== SECTION 4: Utilities ==========
         util_frame = ttk.LabelFrame(
-            main_frame, text="3. Utilities", padding="10")
-        util_frame.grid(row=2, column=0, columnspan=2,
+            main_frame, text="4. Utilities", padding="10")
+        util_frame.grid(row=3, column=0, columnspan=2,
                         sticky=(tk.W, tk.E), pady=5)
 
         ttk.Button(util_frame, text="🔄 Re-extract All Embeddings",
                    command=self.reextract_embeddings).grid(row=0, column=0, padx=5, pady=5)
+        ttk.Button(util_frame, text="🔄 Force Re-extract All",
+                   command=lambda: self.reextract_embeddings(force=True)).grid(row=0, column=1, padx=5, pady=5)
         ttk.Button(util_frame, text="📊 Show Dataset Info",
-                   command=self.show_dataset_info).grid(row=0, column=1, padx=5, pady=5)
+                   command=self.show_dataset_info).grid(row=0, column=2, padx=5, pady=5)
 
-        # ========== SECTION 4: Console Output ==========
+        # ========== SECTION 5: Console Output ==========
         console_frame = ttk.LabelFrame(
             main_frame, text="Console Output", padding="10")
-        console_frame.grid(row=3, column=0, columnspan=2,
+        console_frame.grid(row=4, column=0, columnspan=2,
                            sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
 
         self.console = scrolledtext.ScrolledText(console_frame, height=15,
@@ -105,11 +126,12 @@ class FaceRecognitionApp:
         root.columnconfigure(0, weight=1)
         root.rowconfigure(0, weight=1)
         main_frame.columnconfigure(0, weight=1)
-        main_frame.rowconfigure(3, weight=1)
+        main_frame.rowconfigure(4, weight=1)
         console_frame.columnconfigure(0, weight=1)
         console_frame.rowconfigure(0, weight=1)
 
         self.selected_files = []
+        self.classify_files = []
         self.log("App initialized. Ready to use!")
 
     def log(self, message, level="INFO"):
@@ -145,6 +167,49 @@ class FaceRecognitionApp:
                 foreground="green"
             )
             self.log(f"Selected {len(self.selected_files)} images")
+
+    def load_classify_images(self):
+        """Load images to classify"""
+        files = filedialog.askopenfilenames(
+            title="Select Images to Classify",
+            filetypes=[("Image files", "*.jpg *.jpeg *.png"),
+                       ("All files", "*.*")]
+        )
+        if not files:
+            return
+
+        # Conferma
+        confirm_msg = (
+            f"Copy {len(files)} images to classification folder?\n\n"
+            f"Target: {CLASSIFY_IMAGES_DIR}\n\n"
+            f"These images will be used by 'Image Recognition'."
+        )
+
+        if not messagebox.askyesno("Confirm Load", confirm_msg):
+            return
+
+        try:
+            # Crea directory se non esiste
+            classify_dir = Path(CLASSIFY_IMAGES_DIR)
+            classify_dir.mkdir(parents=True, exist_ok=True)
+
+            # Copia immagini
+            for file in files:
+                filename = os.path.basename(file)
+                dest = classify_dir / filename
+                shutil.copy2(file, dest)
+                self.log(f"Copied: {filename}")
+
+            self.classify_images_label.config(
+                text=f"{len(files)} images loaded",
+                foreground="green"
+            )
+            self.log(
+                f"✓ {len(files)} images loaded for classification", "SUCCESS")
+
+        except Exception as e:
+            self.log(f"✗ Error loading images: {str(e)}", "ERROR")
+            messagebox.showerror("Error", f"Failed to load images:\n{str(e)}")
 
     def import_and_process(self):
         """Import images and run augmentation + embedding extraction"""
@@ -215,7 +280,7 @@ class FaceRecognitionApp:
             if needs_augment:
                 self.log("Running augmentation...")
                 result = subprocess.run(
-                    [sys.executable, "-m", "src.augment_dataset"],
+                    [sys.executable, "-m", "src.augment"],
                     capture_output=True,
                     text=True
                 )
@@ -229,11 +294,13 @@ class FaceRecognitionApp:
 
             # Extract embeddings
             self.log(f"Extracting embeddings ({script})...")
-            result = subprocess.run(
-                [sys.executable, "-m", f"src.{script.replace('.py', '')}"],
-                capture_output=True,
-                text=True
-            )
+
+            # Aggiungi parametri per processing incrementale
+            cmd = [sys.executable, "-m", f"src.{script.replace('.py', '')}"]
+            if target == "dataset" and person_name:
+                cmd.extend(["--person", person_name])
+
+            result = subprocess.run(cmd, capture_output=True, text=True)
             self.log(result.stdout)
             if result.returncode == 0:
                 self.log("✓ Embeddings extracted", "SUCCESS")
@@ -285,34 +352,36 @@ class FaceRecognitionApp:
         except Exception as e:
             self.log(f"✗ Error running {script_name}: {str(e)}", "ERROR")
 
-    def reextract_embeddings(self):
+    def reextract_embeddings(self, force=False):
         """Re-extract all embeddings"""
+        force_text = " (FORCE)" if force else ""
         confirm_msg = (
-            "Re-extract all embeddings?\n\n"
-            "This will run:\n"
-            "- image_to_embedding.py\n"
-            "- extract_embeddings.py\n\n"
-            "This may take several minutes."
+            f"Re-extract all embeddings{force_text}?\n\n"
+            f"This will run:\n"
+            f"- image_to_embedding.py{' --force' if force else ''}\n"
+            f"- extract_embeddings.py\n\n"
+            f"{'FORCE will ignore cache and reprocess everything.' if force else 'Only changed files will be processed (incremental).'}\n\n"
+            f"This may take several minutes."
         )
 
         if not messagebox.askyesno("Confirm Re-extraction", confirm_msg):
             return
 
-        thread = threading.Thread(target=self._do_reextract)
+        thread = threading.Thread(target=self._do_reextract, args=(force,))
         thread.start()
 
-    def _do_reextract(self):
+    def _do_reextract(self, force=False):
         """Internal method to re-extract embeddings"""
         scripts = ["src.image_to_embedding", "src.extract_embeddings"]
 
         for script in scripts:
             self.log(f"Running {script}...")
             try:
-                result = subprocess.run(
-                    [sys.executable, "-m", script],
-                    capture_output=True,
-                    text=True
-                )
+                cmd = [sys.executable, "-m", script]
+                if force and script == "src.image_to_embedding":
+                    cmd.append("--force")
+
+                result = subprocess.run(cmd, capture_output=True, text=True)
                 self.log(result.stdout)
                 if result.returncode == 0:
                     self.log(f"✓ {script} completed", "SUCCESS")
