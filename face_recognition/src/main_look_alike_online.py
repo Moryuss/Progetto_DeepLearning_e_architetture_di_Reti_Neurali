@@ -1,7 +1,7 @@
 import os
-import cv2
-import numpy as np
-from src.utils import initialization_detector_recognizer
+import cv2  # pyright: ignore[reportMissingImports]
+import numpy as np  # pyright: ignore[reportMissingImports]
+from src.inizializer import initialization_detector_recognizer
 from src.detector import FaceDetector
 from src.recognizer import FaceRecognizer
 from src.utils import load_embeddings, draw_label, load_image_safe, find_top_k

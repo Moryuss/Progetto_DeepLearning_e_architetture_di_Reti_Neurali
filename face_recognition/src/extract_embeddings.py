@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 from src.detector import FaceDetector
 from src.recognizer import FaceRecognizer
+from src.inizializer import initialization_detector_recognizer
 
 from src.config import (
     PEOPLE_DIR,
@@ -80,14 +81,8 @@ def main():
     people_embeddings_path = str(PEOPLE_EMB_PATH)
     known_embeddings_path = str(KNOWN_EMB_PATH)
 
-    detector = FaceDetector(model_path=str(detector_model_path))
-
-    from facenet_pytorch import InceptionResnetV1
-    backbone = InceptionResnetV1(pretrained=None)
-    recognizer = FaceRecognizer(
-        model=backbone,
-        model_path=str(recognizer_model_path)
-    )
+    detector, recognizer = initialization_detector_recognizer(
+        detector_model_path, recognizer_model_path)
 
     # embedding di persone note e ignote
     # NOTA se non vuoi runnare quello delle immagini di people che sono molte, commentalo easy

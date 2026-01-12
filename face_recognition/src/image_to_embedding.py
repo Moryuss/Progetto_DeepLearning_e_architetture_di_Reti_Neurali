@@ -6,6 +6,8 @@ import torch
 
 from src.detector import FaceDetector
 from src.recognizer import FaceRecognizer
+from src.inizializer import initialization_detector_recognizer
+
 
 from src.config import (
     DATASET_DIR,
@@ -106,18 +108,12 @@ def process_dataset(dataset_dir: str,
 
 def main():
     # se danno errore --> str(...)
-    dataset_dir = DATASET_DIR
-    detector_model_path = DETECTOR_MODEL_PATH
-    recognizer_model_path = RECOGNIZER_MODEL_PATH
+    dataset_dir = str(DATASET_DIR)
+    detector_model_path = str(DETECTOR_MODEL_PATH)
+    recognizer_model_path = str(RECOGNIZER_MODEL_PATH)
 
-    detector = FaceDetector(model_path=str(detector_model_path))
-
-    from facenet_pytorch import InceptionResnetV1
-    backbone = InceptionResnetV1(pretrained=None)
-    recognizer = FaceRecognizer(
-        model=backbone,
-        model_path=str(recognizer_model_path)
-    )
+    detector, recognizer = initialization_detector_recognizer(
+        detector_model_path, recognizer_model_path)
 
     process_dataset(str(dataset_dir), detector, recognizer)
     detector.close()
