@@ -93,7 +93,15 @@ def preprocess_for_recognizer(image, input_size):
     return img
 
 
-def load_dataset_embeddings(dataset_dir: str, model_name: str = "", recognizer=None):
+def get_model_name(recognizer):
+    """Estrae il nome del modello, con fallback a MODEL_NAME da config"""
+    try:
+        return recognizer.model.__class__.__name__
+    except:
+        return MODEL_NAME if MODEL_NAME is not None else "UnknownModel"
+
+
+def load_dataset_embeddings(dataset_dir: str, model_name: str = None, recognizer=None):
     """
     Carica tutti gli embeddings del dataset in memoria.
 
@@ -111,13 +119,17 @@ def load_dataset_embeddings(dataset_dir: str, model_name: str = "", recognizer=N
         if recognizer is not None:
             model_name = get_model_name(recognizer)
         else:
-            model_name = MODEL_NAME
+            model_name = MODEL_NAME if MODEL_NAME is not None else "UnknownModel"
 
     embeddings_list = []
     labels_list = []
 
     for person_name in os.listdir(dataset_dir):
         person_path = os.path.join(dataset_dir, person_name)
+
+        if not os.path.isdir(person_path):
+            continue
+
         npz_path = os.path.join(person_path, f"embeddings_{model_name}.npz")
 
         if os.path.exists(npz_path):
@@ -130,11 +142,13 @@ def load_dataset_embeddings(dataset_dir: str, model_name: str = "", recognizer=N
             old_npz_path = os.path.join(person_path, "embeddings.npz")
             if os.path.exists(old_npz_path):
                 print(
-                    f"[WARN] {person_name}: usando vecchio formato embeddings.npz")
+                    f"[WARN] {person_name}: file con model_name non trovato, usando vecchio formato embeddings.npz")
                 data = np.load(old_npz_path)
                 for fname, emb in data.items():
                     embeddings_list.append(emb)
                     labels_list.append(person_name)
+            else:
+                print(f"[SKIP] {person_name}: nessun file embeddings trovato")
 
     if embeddings_list:
         embeddings_array = np.stack(embeddings_list)
@@ -144,7 +158,7 @@ def load_dataset_embeddings(dataset_dir: str, model_name: str = "", recognizer=N
     return embeddings_array, labels_list
 
 
-def load_embeddings(npz_path, model_name: str = ""):
+def load_embeddings(npz_path, model_name: str = None):
     '''
     Carica embeddings da file .npz, non contiene nomi personali ma solo nomi file immagine.
 
@@ -155,7 +169,10 @@ def load_embeddings(npz_path, model_name: str = ""):
     Ritorna: embeddings_array, names_list    
     '''
     if model_name is None:
-        model_name = MODEL_NAME
+        model_name = MODEL_NAME if MODEL_NAME is not None else "UnknownModel"
+
+    # Converti Path a stringa se necessario
+    npz_path = str(npz_path)
 
     # Prova prima con il nome del modello
     if not npz_path.endswith('.npz'):
@@ -284,11 +301,3 @@ def find_top_k(query_emb, db_embs, db_names, k):
         for i in idxs
     ]
 ##
-
-
-def get_model_name(recognizer):
-    """Estrae il nome del modello, con fallback a MODEL_NAME da config"""
-    try:
-        return recognizer.model.__class__.__name__
-    except:
-        return MODEL_NAME
