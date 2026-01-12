@@ -2,12 +2,12 @@ import os
 import cv2
 import numpy as np
 from src.utils import load_embeddings, load_image_safe, find_top_k, resize_height
-
 from src.config import (
     PEOPLE_EMB_PATH,
     KNOWN_EMB_PATH,
     PEOPLE_DIR,
-    KNOWN_PEOPLE_DIR
+    KNOWN_PEOPLE_DIR,
+    MODEL_NAME
 )
 
 # ---------------- CONFIG ----------------
@@ -21,9 +21,15 @@ def main():
     # semplicemente si controlla la cosine similarity tra immagini già embedded
     # le immagini sono embeddate con extract_embeddings, non image_to_embedding
 
+    # Specifica quale modello usare (modifica se necessario)
+    model_name = MODEL_NAME  # oppure passalo come argomento CLI
+    print(f"[INFO] Using model: {model_name}")
+
     # ---- load embeddings ----
-    people_embs, people_names = load_embeddings(PEOPLE_EMB_PATH)
-    known_embs, known_names = load_embeddings(KNOWN_EMB_PATH)
+    people_embs, people_names = load_embeddings(
+        PEOPLE_EMB_PATH, model_name=model_name)
+    known_embs, known_names = load_embeddings(
+        KNOWN_EMB_PATH, model_name=model_name)
 
     print(f"[INFO] PEOPLE embeddings: {len(people_names)}")
     print(f"[INFO] KNOWN embeddings:  {len(known_names)}")
@@ -49,7 +55,6 @@ def main():
             os.path.join(KNOWN_PEOPLE_DIR, q_name),
             MAX_IMG_SIZE
         )
-
         if q_img is None:
             continue
 
@@ -65,7 +70,6 @@ def main():
                 continue
 
             img = resize_height(img, MAX_IMG_SIZE)
-
             cv2.putText(
                 img,
                 f"{sim:.3f}",

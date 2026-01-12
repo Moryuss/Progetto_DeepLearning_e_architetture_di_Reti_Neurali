@@ -2,6 +2,9 @@ import cv2  # pyright: ignore[reportMissingImports]
 import numpy as np  # pyright: ignore[reportMissingImports]
 import os
 import torch  # pyright: ignore[reportMissingImports]
+from src.config import (
+    MODEL_NAME  # fallback della ricerca del nome del modello usato
+)
 
 
 def crop_face(image, bbox, margin=0):
@@ -90,24 +93,48 @@ def preprocess_for_recognizer(image, input_size):
     return img
 
 
-def load_dataset_embeddings(dataset_dir: str):
+def load_dataset_embeddings(dataset_dir: str, model_name: str = "", recognizer=None):
     """
     Carica tutti gli embeddings del dataset in memoria.
+
+    Args:
+        dataset_dir: path del dataset
+        model_name: nome del modello (opzionale)
+        recognizer: recognizer object per auto-rilevare il modello (opzionale)
+
     Ritorna:
         embeddings_list: lista di np.array
         labels_list: lista di nomi corrispondenti
     """
+    # Determina il nome del modello
+    if model_name is None:
+        if recognizer is not None:
+            model_name = get_model_name(recognizer)
+        else:
+            model_name = MODEL_NAME
+
     embeddings_list = []
     labels_list = []
 
     for person_name in os.listdir(dataset_dir):
         person_path = os.path.join(dataset_dir, person_name)
-        npz_path = os.path.join(person_path, "embeddings.npz")
+        npz_path = os.path.join(person_path, f"embeddings_{model_name}.npz")
+
         if os.path.exists(npz_path):
             data = np.load(npz_path)
             for fname, emb in data.items():
                 embeddings_list.append(emb)
                 labels_list.append(person_name)
+        else:
+            # Se non trova il file con model_name, prova con il vecchio nome
+            old_npz_path = os.path.join(person_path, "embeddings.npz")
+            if os.path.exists(old_npz_path):
+                print(
+                    f"[WARN] {person_name}: usando vecchio formato embeddings.npz")
+                data = np.load(old_npz_path)
+                for fname, emb in data.items():
+                    embeddings_list.append(emb)
+                    labels_list.append(person_name)
 
     if embeddings_list:
         embeddings_array = np.stack(embeddings_list)
@@ -117,12 +144,38 @@ def load_dataset_embeddings(dataset_dir: str):
     return embeddings_array, labels_list
 
 
-def load_embeddings(npz_path):
+def load_embeddings(npz_path, model_name: str = ""):
     '''
-    Carica embeddings da file .npz, non conitene nomi personali ma solo nomi file immagine.
+    Carica embeddings da file .npz, non contiene nomi personali ma solo nomi file immagine.
+
+    Args:
+        npz_path: path base del file (senza suffisso modello)
+        model_name: nome del modello (opzionale, usa MODEL_NAME se None)
+
     Ritorna: embeddings_array, names_list    
     '''
-    data = np.load(npz_path)
+    if model_name is None:
+        model_name = MODEL_NAME
+
+    # Prova prima con il nome del modello
+    if not npz_path.endswith('.npz'):
+        npz_path = f"{npz_path}.npz"
+
+    # Costruisci path con model_name
+    base_path = npz_path.replace('.npz', '')
+    model_npz_path = f"{base_path}_{model_name}.npz"
+
+    # Prova prima con il nuovo formato
+    if os.path.exists(model_npz_path):
+        data = np.load(model_npz_path)
+    elif os.path.exists(npz_path):
+        # Fallback al vecchio formato
+        print(f"[WARN] Usando vecchio formato: {npz_path}")
+        data = np.load(npz_path)
+    else:
+        raise FileNotFoundError(
+            f"Nessun file trovato: {model_npz_path} o {npz_path}")
+
     names = list(data.keys())
     embs = np.vstack([data[k] for k in names])
     return embs, names
@@ -231,3 +284,11 @@ def find_top_k(query_emb, db_embs, db_names, k):
         for i in idxs
     ]
 ##
+
+
+def get_model_name(recognizer):
+    """Estrae il nome del modello, con fallback a MODEL_NAME da config"""
+    try:
+        return recognizer.model.__class__.__name__
+    except:
+        return MODEL_NAME

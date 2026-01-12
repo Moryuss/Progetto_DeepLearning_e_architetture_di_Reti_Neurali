@@ -26,7 +26,8 @@ def main():
         yolo_model_path, recognizer_model_path)
 
     # Carica embeddings del dataset
-    embeddings_array, labels_list = load_dataset_embeddings(dataset_dir)
+    embeddings_array, labels_list = load_dataset_embeddings(
+        dataset_dir, recognizer=recognizer)
 
     # Scansiona tutte le immagini nella cartella
     for fname in os.listdir(images_dir):

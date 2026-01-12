@@ -8,6 +8,7 @@ DATASET_DIR = BASE_DIR / "data" / "dataset"
 CLASSIFY_IMAGES_DIR = BASE_DIR / "data" / "classify_images"
 
 # modelli
+MODEL_NAME = "ResNet50"
 DETECTOR_MODEL_PATH = BASE_DIR / "models" / "face_detection" / "yolo11_nano.pt"
 RECOGNIZER_MODEL_PATH = BASE_DIR / "models" / "face_recognition" / "vggface2.pt"
 

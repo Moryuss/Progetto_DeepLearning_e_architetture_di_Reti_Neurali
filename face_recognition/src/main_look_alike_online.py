@@ -1,11 +1,10 @@
 import os
-import cv2  # pyright: ignore[reportMissingImports]
-import numpy as np  # pyright: ignore[reportMissingImports]
+import cv2
+import numpy as np
 from src.inizializer import initialization_detector_recognizer
 from src.detector import FaceDetector
 from src.recognizer import FaceRecognizer
-from src.utils import load_embeddings, draw_label, load_image_safe, find_top_k
-
+from src.utils import load_embeddings, draw_label, load_image_safe, find_top_k, get_model_name
 from src.config import (
     PEOPLE_EMB_PATH,
     DETECTOR_MODEL_PATH,
@@ -24,14 +23,18 @@ def main():
     yolo_model_path = str(DETECTOR_MODEL_PATH)
     recognizer_model_path = str(RECOGNIZER_MODEL_PATH)
 
-    # cartella con immagini da classificare
-    # ---- carica PEOPLE embeddings ----
-    people_embs, people_names = load_embeddings(PEOPLE_EMB_PATH)
-    print(f"[INFO] PEOPLE embeddings: {len(people_names)}")
-
     # Inizializza detector e recognizer
     detector, recognizer = initialization_detector_recognizer(
         yolo_model_path, recognizer_model_path)
+
+    # Auto-rileva il modello
+    model_name = get_model_name(recognizer)
+    print(f"[INFO] Using model: {model_name}")
+
+    # ---- carica PEOPLE embeddings ----
+    people_embs, people_names = load_embeddings(
+        PEOPLE_EMB_PATH, model_name=model_name)
+    print(f"[INFO] PEOPLE embeddings: {len(people_names)}")
 
     # ---- apri webcam ----
     cap = cv2.VideoCapture(0)
@@ -54,7 +57,6 @@ def main():
             face_crop = frame[y1:y2, x1:x2]
 
             emb = recognizer.get_embedding(face_crop)
-
             top_match = find_top_k(emb, people_embs, people_names, TOP_K)[0]
             match_name, match_score = top_match
 
@@ -70,6 +72,7 @@ def main():
             # mostra immagine più simile a lato
             match_img = load_image_safe(os.path.join(
                 PEOPLE_DIR, match_name), MAX_IMG_SIZE)
+
             if match_img is not None:
                 cv2.putText(match_img, f"{match_score:.3f}", (10, 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
