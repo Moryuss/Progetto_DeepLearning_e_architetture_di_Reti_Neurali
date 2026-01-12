@@ -1,11 +1,9 @@
 import os
-import cv2
-import numpy as np
-import torch
-from src.detector import FaceDetector
-from src.recognizer import FaceRecognizer
+import cv2  # pyright: ignore[reportMissingImports]
+import numpy as np  # pyright: ignore[reportMissingImports]
+import torch  # pyright: ignore[reportMissingImports]
 from src.utils import recognize_faces, load_dataset_embeddings, draw_label
-from src.utils import initialization_detector_recognizer
+from src.inizializer import initialization_detector_recognizer
 
 from src.config import (
     DATASET_DIR,

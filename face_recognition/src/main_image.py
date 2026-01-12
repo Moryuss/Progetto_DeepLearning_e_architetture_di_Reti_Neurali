@@ -1,12 +1,9 @@
 import os
-import cv2
-import numpy as np
-import torch
-from src.detector import FaceDetector
-from src.recognizer import FaceRecognizer
+import cv2  # pyright: ignore[reportMissingImports]
+import numpy as np  # pyright: ignore[reportMissingImports]
+import torch  # pyright: ignore[reportMissingImports]
 from src.utils import draw_label, recognize_faces, load_dataset_embeddings, resize_max, draw_label
-from facenet_pytorch import InceptionResnetV1
-
+from src.inizializer import initialization_detector_recognizer
 from src.config import (
     DATASET_DIR,
     DETECTOR_MODEL_PATH,
@@ -25,10 +22,8 @@ def main():
     images_dir = str(CLASSIFY_IMAGES_DIR)
 
     # Inizializza detector e recognizer
-    detector = FaceDetector(model_path=yolo_model_path)
-    backbone = InceptionResnetV1(pretrained=None)
-    recognizer = FaceRecognizer(
-        model=backbone, model_path=recognizer_model_path)
+    detector, recognizer = initialization_detector_recognizer(
+        yolo_model_path, recognizer_model_path)
 
     # Carica embeddings del dataset
     embeddings_array, labels_list = load_dataset_embeddings(dataset_dir)
