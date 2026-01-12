@@ -1,8 +1,7 @@
 import os
 import cv2
 import numpy as np
-from facenet_pytorch import InceptionResnetV1
-
+from src.utils import initialization_detector_recognizer
 from src.detector import FaceDetector
 from src.recognizer import FaceRecognizer
 from src.utils import load_embeddings, draw_label, load_image_safe, find_top_k
@@ -22,15 +21,17 @@ MAX_IMG_SIZE = 300
 
 
 def main():
+    yolo_model_path = str(DETECTOR_MODEL_PATH)
+    recognizer_model_path = str(RECOGNIZER_MODEL_PATH)
+
+    # cartella con immagini da classificare
     # ---- carica PEOPLE embeddings ----
     people_embs, people_names = load_embeddings(PEOPLE_EMB_PATH)
     print(f"[INFO] PEOPLE embeddings: {len(people_names)}")
 
-    # ---- inizializza detector e recognizer ----
-    detector = FaceDetector(model_path=str(DETECTOR_MODEL_PATH))
-    backbone = InceptionResnetV1(pretrained=None)
-    recognizer = FaceRecognizer(
-        model=backbone, model_path=str(RECOGNIZER_MODEL_PATH))
+    # Inizializza detector e recognizer
+    detector, recognizer = initialization_detector_recognizer(
+        yolo_model_path, recognizer_model_path)
 
     # ---- apri webcam ----
     cap = cv2.VideoCapture(0)
