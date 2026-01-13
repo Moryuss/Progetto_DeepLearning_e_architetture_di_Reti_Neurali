@@ -110,6 +110,14 @@ Il file \texttt{config.py} agisce come un punto di configurazione centrale, forn
     \item[Relazioni:] Utilizza \texttt{detector.py} e \texttt{recognizer.py}. I suoi file di output sono usati da \texttt{main\_look\_alike\_offline.py} e \texttt{main\_look\_alike\_online.py}.
 \end{description}
 
+\subsection{initializer.py}
+\begin{description}
+    \item[Scopo:] Contiene un solo metodo, per inizializzare detector e recognizer. Prende due path che portano ai rispettivi pesi e crea i modelli  .
+    \item[Relazioni:] Dipende da FaceDetector e FaceRecognizer per creare i modelli e dalla classe InceptionResnetV1 per la struttura del modello.
+\end{description}
+
+
+
 \subsection{main\_camera.py}
 \begin{description}
     \item[Scopo:] Entrypoint principale per il riconoscimento facciale in tempo reale tramite webcam.

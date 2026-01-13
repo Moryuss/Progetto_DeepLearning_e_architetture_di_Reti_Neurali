@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.3) (preloaded format=pdflatex 2025.4.12)  7 JAN 2026 18:07
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.3) (preloaded format=pdflatex 2025.4.12)  12 JAN 2026 15:53
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -408,12 +408,12 @@ Overfull \hbox (102.38014pt too wide) in paragraph at lines 110--111
  []
 
 
-Overfull \hbox (53.11047pt too wide) in paragraph at lines 118--119
+Overfull \hbox (53.11047pt too wide) in paragraph at lines 126--127
 []\T1/lmr/m/n/10.95 Carica in me-mo-ria tut-ti gli em-bed-ding del da-ta-set usan-do \T1/lmtt/m/n/10.95 utils.load_dataset_embeddings\T1/lmr/m/n/10.95 . 
  []
 
 
-Overfull \hbox (3.52658pt too wide) in paragraph at lines 120--121
+Overfull \hbox (3.52658pt too wide) in paragraph at lines 128--129
 []\T1/lmr/m/n/10.95 Usa la fun-zio-ne \T1/lmtt/m/n/10.95 utils.recognize_faces \T1/lmr/m/n/10.95 (che a sua vol-ta usa \T1/lmtt/m/n/10.95 detector \T1/lmr/m/n/10.95 e \T1/lmtt/m/n/10.95 recognizer\T1/lmr/m/n/10.95 )
  []
 
@@ -450,20 +450,20 @@ LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
  ***********
 Package rerunfilecheck Info: File `analisi_codice.out' has not changed.
-(rerunfilecheck)             Checksum: 18764CA1E376DC2540105FF0D4972BC3;3175.
+(rerunfilecheck)             Checksum: EA037B1CD164F113F2C27C017E08F8A1;3304.
  ) 
 Here is how much of TeX's memory you used:
- 11004 strings out of 473523
- 180007 string characters out of 5710238
- 588949 words of memory out of 5000000
- 34030 multiletter control sequences out of 15000+600000
+ 11006 strings out of 473523
+ 180039 string characters out of 5710238
+ 589949 words of memory out of 5000000
+ 34031 multiletter control sequences out of 15000+600000
  599212 words of font info for 61 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,11n,79p,536b,524s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,11n,79p,536b,544s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/Matteo Ghidini/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx10.pfb><C:/Users/Matteo Ghidini/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx12.pfb><C:/Users/Matteo Ghidini/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr10.pfb><C:/Users/Matteo Ghidini/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr12.pfb><C:/Users/Matteo Ghidini/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmtt10.pfb>
-Output written on analisi_codice.pdf (6 pages, 179371 bytes).
+Output written on analisi_codice.pdf (6 pages, 180180 bytes).
 PDF statistics:
- 191 PDF objects out of 1000 (max. 8388607)
- 49 named destinations out of 1000 (max. 500000)
- 153 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 196 PDF objects out of 1000 (max. 8388607)
+ 50 named destinations out of 1000 (max. 500000)
+ 161 words of extra memory for PDF output out of 10000 (max. 10000000)
 
