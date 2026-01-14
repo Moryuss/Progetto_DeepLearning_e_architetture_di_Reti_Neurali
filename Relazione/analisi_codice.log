@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.3) (preloaded format=pdflatex 2025.4.12)  12 JAN 2026 15:53
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.3) (preloaded format=pdflatex 2025.4.12)  13 JAN 2026 22:00
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -436,6 +436,16 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 [5]
+<Immagini_Relazione/GUI_App.png, id=156, 846.91406pt x 684.30656pt>
+File: Immagini_Relazione/GUI_App.png Graphic file (type png)
+<use Immagini_Relazione/GUI_App.png>
+Package pdftex.def Info: Immagini_Relazione/GUI_App.png  used on input line 208.
+(pdftex.def)             Requested size: 455.24411pt x 367.83893pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+
 
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
@@ -444,26 +454,35 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
-[6] (analisi_codice.aux)
+[6]
+
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.59999pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.59999pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
+
+[7 <./Immagini_Relazione/GUI_App.png>] (analisi_codice.aux)
  ***********
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
  ***********
 Package rerunfilecheck Info: File `analisi_codice.out' has not changed.
-(rerunfilecheck)             Checksum: EA037B1CD164F113F2C27C017E08F8A1;3304.
+(rerunfilecheck)             Checksum: 9BD6E7182C6FCC4EDB61395C11344CF3;3522.
  ) 
 Here is how much of TeX's memory you used:
- 11006 strings out of 473523
- 180039 string characters out of 5710238
- 589949 words of memory out of 5000000
- 34031 multiletter control sequences out of 15000+600000
+ 11035 strings out of 473523
+ 180524 string characters out of 5710238
+ 590981 words of memory out of 5000000
+ 34044 multiletter control sequences out of 15000+600000
  599212 words of font info for 61 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,11n,79p,536b,544s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,11n,79p,562b,630s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/Matteo Ghidini/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx10.pfb><C:/Users/Matteo Ghidini/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx12.pfb><C:/Users/Matteo Ghidini/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr10.pfb><C:/Users/Matteo Ghidini/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr12.pfb><C:/Users/Matteo Ghidini/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmtt10.pfb>
-Output written on analisi_codice.pdf (6 pages, 180180 bytes).
+Output written on analisi_codice.pdf (7 pages, 266723 bytes).
 PDF statistics:
- 196 PDF objects out of 1000 (max. 8388607)
- 50 named destinations out of 1000 (max. 500000)
- 161 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 230 PDF objects out of 1000 (max. 8388607)
+ 66 named destinations out of 1000 (max. 500000)
+ 182 words of extra memory for PDF output out of 10000 (max. 10000000)
 

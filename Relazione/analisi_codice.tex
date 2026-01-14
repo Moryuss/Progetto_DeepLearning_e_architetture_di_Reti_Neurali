@@ -197,4 +197,39 @@ Se invece si vuole aggiungere persone nel dataset dei Look-alike serve fare alcu
     similarity\_images/known\_people;\\
     \texttt{python -m src.main\_look\_alike\_online}    per confrontare direttamente attraverso la camera.
 \end{enumerate}
+
+\section{GUI app}
+È possibile utilizzare un applicazione grafica per semplificare l'interazione con l'app. 
+Il comando per far partire la gui:\\
+\texttt{python -m src.gui\_app}
+\subsection{Spiegazione GUI}
+\begin{figure}[h]       % 'h' = here, posizionamento approssimativo
+    \centering          % centra l'immagine
+    \includegraphics[width=1\textwidth]{Immagini_Relazione/GUI_App.png}
+    \caption{GUI App}
+    \label{fig:guiapp} % per fare riferimenti all'immagine
+\end{figure}
+\begin{enumerate}
+    \item \textbf{Import \& Process Images:} Consente di inserire le immagini in modo semplice. Basta specificare il nome della persona da riconoscere e selezionare l'immagine dal File System. Successivamente, premendo il pulsante ``Import \& Process'', vengono creati gli embeddings delle immagini. Questi embeddings vengono utilizzati nelle sezioni 3.a, 3.b, 3.c e 3.d.
+    
+    \item \textbf{Load Images to Classify:} Caricando le immagini in questa sezione, esse diventano disponibili nella sezione 3.b per la classificazione.
+    
+    \item \textbf{Run Main Script:} Quattro pulsanti consentono di avviare i diversi script principali dell'applicazione:
+    \begin{enumerate}
+        \item \textbf{Camera Recognition:} utilizzo della telecamera per la classificazione in tempo reale.
+        \item \textbf{Image Recognition:} classificazione delle immagini caricate nella sezione 2.
+        \item \textbf{Look-alike Offline:} ricerca di persone simili a quelle caricate.
+        \item \textbf{Look-alike Online:} utilizzo della telecamera per la ricerca di persone simili a quelle caricate.
+    \end{enumerate}
+    
+    \item \textbf{Utilities:} Strumenti aggiuntivi per la gestione degli embeddings e dei dataset.
+    \begin{enumerate}
+        \item \textbf{Re-extract All Embeddings:} Se viene caricata un'immagine al di fuori della GUI, questo pulsante verifica le directory modificate e crea gli embeddings mancanti.
+        \item \textbf{Force Re-extract All:} genera gli embeddings per tutte le immagini senza controlli.
+        \item \textbf{Show Dataset Info:} mostra la lista delle directory contenenti le immagini delle persone.
+    \end{enumerate}
+    
+    \item \textbf{Console Output:} Visualizza messaggi e informazioni relative alle operazioni eseguite.
+\end{enumerate}
+
 \end{document}
