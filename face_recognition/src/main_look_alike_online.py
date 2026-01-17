@@ -9,8 +9,13 @@ from src.config import (
     PEOPLE_EMB_PATH,
     DETECTOR_MODEL_PATH,
     RECOGNIZER_MODEL_PATH,
-    PEOPLE_DIR
+    PEOPLE_DIR,
+    EMBEDDINGS_DIR,
+    DEFAULT_MODEL,
+    get_model_config,
+    get_people_embeddings_path
 )
+import argparse
 
 # ---------------- CONFIG ----------------
 TOP_K = 1          # mostra solo il match migliore
@@ -19,21 +24,34 @@ MAX_IMG_SIZE = 300
 # ----------------------------------------
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='Face Similarity Live from Webcam')
+    parser.add_argument('--model', type=str, default=DEFAULT_MODEL,
+                        help=f'Recognition model (default: {DEFAULT_MODEL})')
+    parser.add_argument('--threshold', type=float, default=0.60,
+                        help='Recognition threshold (default: 0.60)')
+    return parser.parse_args()
+
+
 def main():
+
+    # Config
+    args = parse_args()
+    model_name = args.model
+    print(f"[INFO] Using model: {model_name}")
+
     yolo_model_path = str(DETECTOR_MODEL_PATH)
     recognizer_model_path = str(RECOGNIZER_MODEL_PATH)
 
     # Inizializza detector e recognizer
     detector, recognizer = initialization_detector_recognizer(
-        yolo_model_path, recognizer_model_path)
-
-    # Auto-rileva il modello
-    model_name = get_model_name(recognizer)
-    print(f"[INFO] Using model: {model_name}")
+        yolo_model_path, recognizer_model_path, model_name=model_name)
 
     # ---- carica PEOPLE embeddings ----
+    people_path = get_people_embeddings_path(model_name)
     people_embs, people_names = load_embeddings(
-        PEOPLE_EMB_PATH, model_name=model_name)
+        people_path, model_name=model_name)
     print(f"[INFO] PEOPLE embeddings: {len(people_names)}")
 
     # ---- apri webcam ----

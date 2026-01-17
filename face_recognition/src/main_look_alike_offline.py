@@ -8,7 +8,9 @@ from src.config import (
     PEOPLE_DIR,
     KNOWN_PEOPLE_DIR,
     DEFAULT_MODEL,
-    get_model_config
+    get_model_config,
+    get_people_embeddings_path,
+    get_known_embeddings_path
 )
 import argparse
 
@@ -40,10 +42,12 @@ def main():
     print(f"[INFO] Using model: {model_name}")
 
     # ---- load embeddings ----
+    people_path = get_people_embeddings_path(model_name)
+    known_path = get_known_embeddings_path(model_name)
     people_embs, people_names = load_embeddings(
-        PEOPLE_EMB_PATH, model_name=model_name)
+        people_path, model_name=model_name)
     known_embs, known_names = load_embeddings(
-        KNOWN_EMB_PATH, model_name=model_name)
+        known_path, model_name=model_name)
 
     print(f"[INFO] PEOPLE embeddings: {len(people_names)}")
     print(f"[INFO] KNOWN embeddings:  {len(known_names)}")
