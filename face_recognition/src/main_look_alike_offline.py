@@ -7,8 +7,11 @@ from src.config import (
     KNOWN_EMB_PATH,
     PEOPLE_DIR,
     KNOWN_PEOPLE_DIR,
-    MODEL_NAME
+    DEFAULT_MODEL,
+    get_model_config
 )
+import argparse
+
 
 # ---------------- CONFIG ----------------
 TOP_K = 3
@@ -17,12 +20,23 @@ MAX_IMG_SIZE = 300
 # ----------------------------------------
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='Look-Alike Offline Similarity Search')
+    parser.add_argument('--model', type=str, default=DEFAULT_MODEL,
+                        help=f'Recognition model (default: {DEFAULT_MODEL})')
+    parser.add_argument('--threshold', type=float, default=0.60,
+                        help='Recognition threshold (default: 0.60)')
+    return parser.parse_args()
+
+
 def main():
     # semplicemente si controlla la cosine similarity tra immagini già embedded
     # le immagini sono embeddate con extract_embeddings, non image_to_embedding
 
     # Specifica quale modello usare (modifica se necessario)
-    model_name = MODEL_NAME  # oppure passalo come argomento CLI
+    args = parse_args()
+    model_name = args.model
     print(f"[INFO] Using model: {model_name}")
 
     # ---- load embeddings ----

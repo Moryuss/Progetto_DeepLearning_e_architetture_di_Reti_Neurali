@@ -6,14 +6,17 @@ import shutil
 import subprocess
 import threading
 from pathlib import Path
-from src.config import DATASET_DIR, PEOPLE_DIR, KNOWN_PEOPLE_DIR, CLASSIFY_IMAGES_DIR
+from src.config import (
+    DATASET_DIR, PEOPLE_DIR, KNOWN_PEOPLE_DIR, CLASSIFY_IMAGES_DIR,
+    AVAILABLE_MODELS, DEFAULT_MODEL
+)
 
 
 class FaceRecognitionApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Face Recognition Manager")
-        self.root.geometry("900x700")
+        self.root.geometry("900x750")
 
         # Style
         style = ttk.Style()
@@ -23,10 +26,57 @@ class FaceRecognitionApp:
         main_frame = ttk.Frame(root, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
+        # ========== SECTION 0: Model Selection (NUOVO!) ==========
+        model_frame = ttk.LabelFrame(
+            main_frame, text="🤖 Model Selection", padding="10")
+        model_frame.grid(row=0, column=0, columnspan=2,
+                         sticky=(tk.W, tk.E), pady=5)
+
+        ttk.Label(model_frame, text="Recognition Model:").grid(
+            row=0, column=0, sticky=tk.W, padx=5)
+
+        # Dropdown con modelli disponibili
+        self.selected_model = tk.StringVar(value=DEFAULT_MODEL)
+        self.model_dropdown = ttk.Combobox(
+            model_frame,
+            textvariable=self.selected_model,
+            values=list(AVAILABLE_MODELS.keys()),
+            state="readonly",
+            width=40
+        )
+        self.model_dropdown.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
+        self.model_dropdown.bind("<<ComboboxSelected>>", self.on_model_changed)
+
+        # Label con info sul modello
+        self.model_info_label = ttk.Label(
+            model_frame,
+            text=AVAILABLE_MODELS[DEFAULT_MODEL]["description"],
+            foreground="gray",
+            wraplength=600
+        )
+        self.model_info_label.grid(
+            row=1, column=0, columnspan=3, sticky=tk.W, padx=5, pady=2)
+
+        # Label con path del modello
+        model_path = AVAILABLE_MODELS[DEFAULT_MODEL]["model_path"]
+        model_exists = model_path.exists() if isinstance(
+            model_path, Path) else Path(model_path).exists()
+        status_text = f"✓ Model found: {model_path}" if model_exists else f"✗ Model NOT found: {model_path}"
+        status_color = "green" if model_exists else "red"
+
+        self.model_path_label = ttk.Label(
+            model_frame,
+            text=status_text,
+            foreground=status_color,
+            font=("TkDefaultFont", 8)
+        )
+        self.model_path_label.grid(
+            row=2, column=0, columnspan=3, sticky=tk.W, padx=5)
+
         # ========== SECTION 1: Import Images ==========
         import_frame = ttk.LabelFrame(
             main_frame, text="1. Import & Process Images", padding="10")
-        import_frame.grid(row=0, column=0, columnspan=2,
+        import_frame.grid(row=1, column=0, columnspan=2,
                           sticky=(tk.W, tk.E), pady=5)
 
         ttk.Label(import_frame, text="Target:").grid(
@@ -65,7 +115,7 @@ class FaceRecognitionApp:
         # ========== SECTION 2: Run Scripts ==========
         run_frame = ttk.LabelFrame(
             main_frame, text="2. Load Images to Classify", padding="10")
-        run_frame.grid(row=1, column=0, columnspan=2,
+        run_frame.grid(row=2, column=0, columnspan=2,
                        sticky=(tk.W, tk.E), pady=5)
 
         ttk.Label(run_frame, text="Images for recognition:").grid(
@@ -79,7 +129,7 @@ class FaceRecognitionApp:
         # ========== SECTION 3: Run Scripts ==========
         scripts_frame = ttk.LabelFrame(
             main_frame, text="3. Run Main Scripts", padding="10")
-        scripts_frame.grid(row=2, column=0, columnspan=2,
+        scripts_frame.grid(row=3, column=0, columnspan=2,
                            sticky=(tk.W, tk.E), pady=5)
 
         scripts = [
@@ -99,7 +149,7 @@ class FaceRecognitionApp:
         # ========== SECTION 4: Utilities ==========
         util_frame = ttk.LabelFrame(
             main_frame, text="4. Utilities", padding="10")
-        util_frame.grid(row=3, column=0, columnspan=2,
+        util_frame.grid(row=4, column=0, columnspan=2,
                         sticky=(tk.W, tk.E), pady=5)
 
         ttk.Button(util_frame, text="🔄 Re-extract All Embeddings",
@@ -112,7 +162,7 @@ class FaceRecognitionApp:
         # ========== SECTION 5: Console Output ==========
         console_frame = ttk.LabelFrame(
             main_frame, text="Console Output", padding="10")
-        console_frame.grid(row=4, column=0, columnspan=2,
+        console_frame.grid(row=5, column=0, columnspan=2,
                            sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
 
         self.console = scrolledtext.ScrolledText(console_frame, height=15,
@@ -126,13 +176,41 @@ class FaceRecognitionApp:
         root.columnconfigure(0, weight=1)
         root.rowconfigure(0, weight=1)
         main_frame.columnconfigure(0, weight=1)
-        main_frame.rowconfigure(4, weight=1)
+        main_frame.rowconfigure(5, weight=1)
         console_frame.columnconfigure(0, weight=1)
         console_frame.rowconfigure(0, weight=1)
 
         self.selected_files = []
         self.classify_files = []
         self.log("App initialized. Ready to use!")
+        self.log(f"Selected model: {DEFAULT_MODEL}", "INFO")
+
+    def on_model_changed(self, event=None):
+        """Callback quando cambia il modello selezionato"""
+        model_name = self.selected_model.get()
+        model_config = AVAILABLE_MODELS[model_name]
+
+        # Aggiorna descrizione
+        self.model_info_label.config(text=model_config["description"])
+
+        # Verifica se il modello esiste
+        model_path = model_config["model_path"]
+        model_exists = model_path.exists() if isinstance(
+            model_path, Path) else Path(model_path).exists()
+
+        status_text = f"✓ Model found: {model_path}" if model_exists else f"✗ Model NOT found: {model_path}"
+        status_color = "green" if model_exists else "red"
+
+        self.model_path_label.config(text=status_text, foreground=status_color)
+
+        self.log(f"Model changed to: {model_name}", "INFO")
+        if not model_exists:
+            self.log(
+                f"⚠️ Warning: Model file not found at {model_path}", "WARNING")
+
+    def get_current_model_name(self):
+        """Ottiene il nome del modello attualmente selezionato"""
+        return self.selected_model.get()
 
     def log(self, message, level="INFO"):
         """Log message to console"""
@@ -223,15 +301,17 @@ class FaceRecognitionApp:
             return
 
         target = self.target_var.get()
+        model_name = self.get_current_model_name()
 
         # Confirm
         confirm_msg = (
             f"Import {len(self.selected_files)} images as '{person_name}'\n"
-            f"Target: {target}\n\n"
+            f"Target: {target}\n"
+            f"Model: {model_name}\n\n"
             f"This will:\n"
             f"1. Copy images to appropriate folder\n"
             f"2. Run augmentation\n"
-            f"3. Extract embeddings\n\n"
+            f"3. Extract embeddings using selected model\n\n"
             f"Continue?"
         )
 
@@ -240,10 +320,10 @@ class FaceRecognitionApp:
 
         # Run in thread to avoid blocking UI
         thread = threading.Thread(target=self._do_import_and_process,
-                                  args=(person_name, target))
+                                  args=(person_name, target, model_name))
         thread.start()
 
-    def _do_import_and_process(self, person_name, target):
+    def _do_import_and_process(self, person_name, target, model_name):
         """Internal method to import and process"""
         try:
             # Determine target directory
@@ -293,12 +373,16 @@ class FaceRecognitionApp:
                     return
 
             # Extract embeddings
-            self.log(f"Extracting embeddings ({script})...")
+            self.log(
+                f"Extracting embeddings ({script}) with model: {model_name}...")
 
-            # Aggiungi parametri per processing incrementale
+            # Aggiungi parametri per processing incrementale + modello
             cmd = [sys.executable, "-m", f"src.{script.replace('.py', '')}"]
             if target == "dataset" and person_name:
                 cmd.extend(["--person", person_name])
+
+            # Passa il modello selezionato
+            cmd.extend(["--model", model_name])
 
             result = subprocess.run(cmd, capture_output=True, text=True)
             self.log(result.stdout)
@@ -325,22 +409,29 @@ class FaceRecognitionApp:
 
     def run_script(self, script_name):
         """Run a main script"""
-        confirm_msg = f"Run {script_name}?\n\nThis will open a new window."
+        model_name = self.get_current_model_name()
+
+        confirm_msg = (
+            f"Run {script_name}?\n\n"
+            f"Model: {model_name}\n\n"
+            f"This will open a new window."
+        )
 
         if not messagebox.askyesno("Confirm Run", confirm_msg):
             return
 
-        self.log(f"Starting {script_name}...")
+        self.log(f"Starting {script_name} with model: {model_name}...")
 
         thread = threading.Thread(
-            target=self._do_run_script, args=(script_name,))
+            target=self._do_run_script, args=(script_name, model_name))
         thread.start()
 
-    def _do_run_script(self, script_name):
+    def _do_run_script(self, script_name, model_name):
         """Internal method to run script"""
         try:
+            # Passa il modello come argomento
             result = subprocess.run(
-                [sys.executable, "-m", script_name],
+                [sys.executable, "-m", script_name, "--model", model_name],
                 capture_output=True,
                 text=True
             )
@@ -354,9 +445,12 @@ class FaceRecognitionApp:
 
     def reextract_embeddings(self, force=False):
         """Re-extract all embeddings"""
+        model_name = self.get_current_model_name()
         force_text = " (FORCE)" if force else ""
+
         confirm_msg = (
             f"Re-extract all embeddings{force_text}?\n\n"
+            f"Model: {model_name}\n\n"
             f"This will run:\n"
             f"- image_to_embedding.py{' --force' if force else ''}\n"
             f"- extract_embeddings.py\n\n"
@@ -367,19 +461,24 @@ class FaceRecognitionApp:
         if not messagebox.askyesno("Confirm Re-extraction", confirm_msg):
             return
 
-        thread = threading.Thread(target=self._do_reextract, args=(force,))
+        thread = threading.Thread(
+            target=self._do_reextract, args=(force, model_name))
         thread.start()
 
-    def _do_reextract(self, force=False):
+    def _do_reextract(self, force=False, model_name=None):
         """Internal method to re-extract embeddings"""
         scripts = ["src.image_to_embedding", "src.extract_embeddings"]
 
         for script in scripts:
-            self.log(f"Running {script}...")
+            self.log(f"Running {script} with model: {model_name}...")
             try:
                 cmd = [sys.executable, "-m", script]
                 if force and script == "src.image_to_embedding":
                     cmd.append("--force")
+
+                # Passa il modello
+                if model_name:
+                    cmd.extend(["--model", model_name])
 
                 result = subprocess.run(cmd, capture_output=True, text=True)
                 self.log(result.stdout)
@@ -397,8 +496,13 @@ class FaceRecognitionApp:
     def show_dataset_info(self):
         """Show dataset statistics"""
         try:
+            model_name = self.get_current_model_name()
+            model_config = AVAILABLE_MODELS[model_name]
+            suffix = model_config["embeddings_suffix"]
+
             dataset_path = Path(DATASET_DIR)
-            info = []
+            info = [f"Current Model: {model_name}",
+                    f"Embeddings suffix: {suffix}", ""]
 
             if dataset_path.exists():
                 people = [d for d in dataset_path.iterdir() if d.is_dir()]
@@ -406,15 +510,17 @@ class FaceRecognitionApp:
                 for person_dir in people:
                     images_dir = person_dir / "images"
                     augmented_dir = person_dir / "augmented"
-                    emb_files = list(person_dir.glob("embeddings_*.npz"))
+                    emb_files = list(person_dir.glob(
+                        f"embeddings_{suffix}.npz"))
 
                     n_images = len(list(images_dir.glob("*.*"))
                                    ) if images_dir.exists() else 0
                     n_aug = len(list(augmented_dir.glob("*.*"))
                                 ) if augmented_dir.exists() else 0
 
+                    emb_status = "✓" if emb_files else "✗"
                     info.append(
-                        f"  {person_dir.name}: {n_images} orig, {n_aug} aug, {len(emb_files)} emb files")
+                        f"  {emb_status} {person_dir.name}: {n_images} orig, {n_aug} aug")
 
             people_path = Path(PEOPLE_DIR)
             if people_path.exists():

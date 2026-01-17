@@ -4,17 +4,32 @@ import numpy as np  # pyright: ignore[reportMissingImports]
 import torch  # pyright: ignore[reportMissingImports]
 from src.utils import draw_label, recognize_faces, load_dataset_embeddings, resize_max, draw_label
 from src.inizializer import initialization_detector_recognizer
+import argparse
 from src.config import (
     DATASET_DIR,
     DETECTOR_MODEL_PATH,
     RECOGNIZER_MODEL_PATH,
     CLASSIFY_IMAGES_DIR,
-    EMBEDDINGS_DIR
+    EMBEDDINGS_DIR,
+    DEFAULT_MODEL,
+    get_model_config
 )
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='Face Recognition from Images')
+    parser.add_argument('--model', type=str, default=DEFAULT_MODEL,
+                        help=f'Recognition model (default: {DEFAULT_MODEL})')
+    parser.add_argument('--threshold', type=float, default=0.60,
+                        help='Recognition threshold (default: 0.60)')
+    return parser.parse_args()
 
 
 def main():
     # Config
+    args = parse_args()
+    model_name = args.model
     dataset_dir = str(DATASET_DIR)
     yolo_model_path = str(DETECTOR_MODEL_PATH)
     recognizer_model_path = str(RECOGNIZER_MODEL_PATH)
@@ -23,11 +38,11 @@ def main():
 
     # Inizializza detector e recognizer
     detector, recognizer = initialization_detector_recognizer(
-        yolo_model_path, recognizer_model_path)
+        yolo_model_path, recognizer_model_path, model_name=model_name)
 
     # Carica embeddings del dataset
     embeddings_array, labels_list = load_dataset_embeddings(
-        dataset_dir, recognizer=recognizer)
+        dataset_dir, recognizer=recognizer, model_name=model_name)
 
     # Scansiona tutte le immagini nella cartella
     for fname in os.listdir(images_dir):

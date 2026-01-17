@@ -3,8 +3,11 @@ import numpy as np  # pyright: ignore[reportMissingImports]
 import os
 import torch  # pyright: ignore[reportMissingImports]
 from src.config import (
-    MODEL_NAME  # fallback della ricerca del nome del modello usato
+    MODEL_NAME,  # fallback della ricerca del nome del modello usato
+    DEFAULT_MODEL,
+    get_model_config
 )
+from pathlib import Path
 
 
 def crop_face(image, bbox, margin=0):
@@ -101,61 +104,79 @@ def get_model_name(recognizer):
         return MODEL_NAME if MODEL_NAME is not None else "UnknownModel"
 
 
-def load_dataset_embeddings(dataset_dir: str, model_name: str = None, recognizer=None):
+def load_dataset_embeddings(dataset_dir, recognizer=None, model_name=None):
     """
-    Carica tutti gli embeddings del dataset in memoria.
-
-    Args:
-        dataset_dir: path del dataset
-        model_name: nome del modello (opzionale)
-        recognizer: recognizer object per auto-rilevare il modello (opzionale)
-
-    Ritorna:
-        embeddings_list: lista di np.array
-        labels_list: lista di nomi corrispondenti
+    Carica embeddings e label dal dataset.
+    Usa il file embeddings corretto in base al modello.
     """
-    # Determina il nome del modello
     if model_name is None:
-        if recognizer is not None:
-            model_name = get_model_name(recognizer)
-        else:
-            model_name = MODEL_NAME if MODEL_NAME is not None else "UnknownModel"
+        model_name = DEFAULT_MODEL
+        print(f"No model specified, using default: {model_name}")
 
-    embeddings_list = []
-    labels_list = []
+    dataset_path = Path(dataset_dir)
 
-    for person_name in os.listdir(dataset_dir):
-        person_path = os.path.join(dataset_dir, person_name)
+    all_embeddings = []
+    all_labels = []
 
-        if not os.path.isdir(person_path):
+    # Ottieni suffix per il nuovo formato
+    model_config = get_model_config(model_name)
+    suffix = model_config['embeddings_suffix']
+
+    for person_dir in sorted(dataset_path.iterdir()):
+        if not person_dir.is_dir():
             continue
 
-        npz_path = os.path.join(person_path, f"embeddings_{model_name}.npz")
+        person_name = person_dir.name
 
-        if os.path.exists(npz_path):
-            data = np.load(npz_path)
-            for fname, emb in data.items():
-                embeddings_list.append(emb)
-                labels_list.append(person_name)
-        else:
-            # Se non trova il file con model_name, prova con il vecchio nome
-            old_npz_path = os.path.join(person_path, "embeddings.npz")
-            if os.path.exists(old_npz_path):
-                print(
-                    f"[WARN] {person_name}: file con model_name non trovato, usando vecchio formato embeddings.npz")
-                data = np.load(old_npz_path)
-                for fname, emb in data.items():
-                    embeddings_list.append(emb)
-                    labels_list.append(person_name)
+        # Prova NUOVO formato: embeddings_{suffix}.npz
+        emb_file = person_dir / f"embeddings_{suffix}.npz"
+
+        # FALLBACK: se non esiste, prova VECCHIO formato: embeddings.npz
+        if not emb_file.exists():
+            emb_file_old = person_dir / "embeddings.npz"
+            if emb_file_old.exists():
+                print(f"WARN {person_name}: using old format embeddings.npz")
+                emb_file = emb_file_old
             else:
-                print(f"[SKIP] {person_name}: nessun file embeddings trovato")
+                print(f"SKIP {person_name}: no embeddings found")
+                continue
 
-    if embeddings_list:
-        embeddings_array = np.stack(embeddings_list)
-    else:
-        embeddings_array = np.array([])
+        try:
+            data = np.load(emb_file)
 
-    return embeddings_array, labels_list
+            # VECCHIO formato: dizionario {filename: embedding}
+            if 'embeddings' not in data and 'labels' not in data:
+                embeddings = np.array([data[key]
+                                      for key in sorted(data.keys())])
+                labels = [person_name] * len(embeddings)
+            # NUOVO formato: array 'embeddings' e 'labels'
+            else:
+                embeddings = data['embeddings']
+                labels = data['labels']
+
+            all_embeddings.append(embeddings)
+            all_labels.extend(labels)
+
+            print(f"OK Loaded {len(embeddings)} embeddings for {person_name}")
+
+        except Exception as e:
+            print(f"ERROR loading embeddings for {person_name}: {e}")
+            continue
+
+    if not all_embeddings:
+        print("ERROR No embeddings found! Run embedding extraction first.")
+        return np.array([]), []
+
+    embeddings_array = np.vstack(all_embeddings)
+
+    norms = np.linalg.norm(embeddings_array, axis=1, keepdims=True)
+    embeddings_array = embeddings_array / (norms + 1e-8)
+
+    print(
+        f"\nDataset loaded: {len(all_labels)} embeddings from {len(all_embeddings)} people")
+    print(f"Embedding dimension: {embeddings_array.shape[1]}")
+
+    return embeddings_array, all_labels
 
 
 def load_embeddings(npz_path, model_name: str = None):
