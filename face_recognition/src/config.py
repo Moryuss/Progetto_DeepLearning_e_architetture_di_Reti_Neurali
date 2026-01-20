@@ -20,25 +20,31 @@ AVAILABLE_MODELS = {
         "embeddings_suffix": "InceptionResnetV1",  # suffisso per file embeddings
         "description": "Modello pretrained su VGGFace2 (512-dim embeddings)"
     },
-    "CNN Baseline (128-dim)": {
+    "CNN Baseline (LFW)(128-dim)": {
         "backbone_type": "FaceEmbeddingCNN",
-        "model_path": BASE_DIR / "models" / "face_recognition" / "best_model.pth",
+        "model_path": BASE_DIR / "models" / "face_recognition" / "cnn_baseline_lfw.pth",
         "embeddings_suffix": "cnn_baseline_128",
-        "description": "CNN custom con embeddings 128-dim"
+        "description": "CNN custom con embeddings 128-dim LFW dataset"
     },
-    "CNN Baseline (256-dim)": {
+    "CNN Optimized (LFW)(256-dim)": {
         "backbone_type": "FaceEmbeddingCNN",
-        "model_path": BASE_DIR / "models" / "face_recognition" / "cnn_baseline_256.pth",
-        "embeddings_suffix": "cnn_baseline_256",
-        "description": "CNN custom con embeddings 256-dim"
+        "model_path": BASE_DIR / "models" / "face_recognition" / "cnn_baseline_LFW.pth",
+        "embeddings_suffix": "cnn_optimized_256",
+        "description": "CNN custom con embeddings 256-dim LFW dataset"
     },
-    "CNN Residual (128-dim)": {
+    "CNN GAP (CelebA)(128-dim)": {
         "backbone_type": "FaceEmbeddingCNN",
-        "model_path": BASE_DIR / "models" / "face_recognition" / "cnn_residual_128.pth",
-        "embeddings_suffix": "cnn_residual_128",
-        "description": "CNN con residual blocks, embeddings 128-dim"
+        "model_path": BASE_DIR / "models" / "face_recognition" / "cnn_gap_celeba.pth",
+        "embeddings_suffix": "cnn_gap_128",
+        "description": "CNN custom con embeddings 128-dim e Global Avarage Pooling"
     },
-    "DNN Baseline (128-dim)": {
+    "CNN Deep Residual (CelebA) (256-dim)": {
+        "backbone_type": "FaceEmbeddingCNN",
+        "model_path": BASE_DIR / "models" / "face_recognition" / "cnn_deep_residual_celeba.pth",
+        "embeddings_suffix": "cnn_deep_residual_256",
+        "description": "CNN con residual blocks, embeddings 256-dim"
+    },
+    "DNN Baseline (128-dim)(not working)": {
         "backbone_type": "FaceEmbeddingDNN",
         "model_path": BASE_DIR / "models" / "face_recognition" / "dnn_baseline_128.pth",
         "embeddings_suffix": "dnn_baseline_128",

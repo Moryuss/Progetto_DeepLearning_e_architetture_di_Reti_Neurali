@@ -77,22 +77,38 @@ def create_model(backbone_type, checkpoint_path=None, **model_kwargs):
             try:
                 checkpoint = torch.load(checkpoint_path, map_location='cpu')
                 if isinstance(checkpoint, dict) and 'config' in checkpoint:
-                    config = checkpoint['config']
-                    print(f" Config caricata da checkpoint:")
+                    # FIX: Gestisci config annidata (model_config)
+                    checkpoint_config = checkpoint['config']
+
+                    # Se la config ha 'model_config' annidato, estrailo
+                    if 'model_config' in checkpoint_config:
+                        config = checkpoint_config['model_config'].copy()
+                        print(
+                            f"✓ Config caricata da checkpoint['config']['model_config']:")
+                    else:
+                        # Altrimenti usa direttamente 'config' (compatibilità)
+                        config = checkpoint_config.copy()
+                        print(f"✓ Config caricata da checkpoint['config']:")
+
                     print(
                         f"  - Embedding size: {config.get('embedding_size', 'N/A')}")
                     print(
                         f"  - Num filters: {config.get('num_filters', 'N/A')}")
                     print(
                         f"  - Use residual: {config.get('use_residual', 'N/A')}")
+                    print(
+                        f"  - Use GAP: {config.get('use_global_avg_pool', 'N/A')}")
+                    print(f"  - Dropout: {config.get('dropout_rate', 'N/A')}")
+                else:
+                    print(" Checkpoint non contiene 'config', uso valori di default")
             except Exception as e:
                 print(
                     f" Warning: impossibile caricare config da checkpoint: {e}")
 
-        # Override con parametri forniti dall'utente
+        # Override con parametri forniti dall'utente (hanno priorità massima)
         config.update(model_kwargs)
 
-        # Valori di default se non specificati
+        # Valori di default SOLO se config è completamente vuota
         if not config:
             config = {
                 'input_channels': 3,
@@ -105,7 +121,7 @@ def create_model(backbone_type, checkpoint_path=None, **model_kwargs):
                 'use_global_avg_pool': False,
                 'use_residual': False
             }
-            print(" Warning: nessuna config trovata, uso valori di default")
+            print("⚠️ Warning: nessuna config trovata, uso valori di default")
 
         # Crea il modello
         model = create_cnn_model(config)
@@ -125,15 +141,28 @@ def create_model(backbone_type, checkpoint_path=None, **model_kwargs):
             try:
                 checkpoint = torch.load(checkpoint_path, map_location='cpu')
                 if isinstance(checkpoint, dict) and 'config' in checkpoint:
-                    config = checkpoint['config']
-                    print(f" Config DNN caricata da checkpoint:")
+                    # FIX: Gestisci config annidata anche per DNN
+                    checkpoint_config = checkpoint['config']
+
+                    if 'model_config' in checkpoint_config:
+                        config = checkpoint_config['model_config'].copy()
+                        print(
+                            f"✓ Config DNN caricata da checkpoint['config']['model_config']:")
+                    else:
+                        config = checkpoint_config.copy()
+                        print(
+                            f"✓ Config DNN caricata da checkpoint['config']:")
+
                     print(
                         f"  - Embedding size: {config.get('embedding_size', 'N/A')}")
                     print(
                         f"  - Hidden sizes: {config.get('hidden_sizes', 'N/A')}")
+                else:
+                    print(
+                        "⚠️ Checkpoint DNN non contiene 'config', uso valori di default")
             except Exception as e:
                 print(
-                    f" Warning: impossibile caricare config da checkpoint: {e}")
+                    f"⚠️ Warning: impossibile caricare config DNN da checkpoint: {e}")
 
         # Override con parametri forniti
         config.update(model_kwargs)
@@ -147,7 +176,7 @@ def create_model(backbone_type, checkpoint_path=None, **model_kwargs):
                 'dropout_rate': 0.5,
                 'use_batchnorm': True
             }
-            print(" Warning: nessuna config DNN trovata, uso valori di default")
+            print("⚠️ Warning: nessuna config DNN trovata, uso valori di default")
 
         # Crea il modello
         model = FaceEmbeddingDNN(**config)
@@ -198,7 +227,14 @@ def get_model_info(checkpoint_path):
     }
 
     if 'config' in checkpoint:
-        info['config'] = checkpoint['config']
+        #  Gestisci config annidata anche qui
+        checkpoint_config = checkpoint['config']
+        if 'model_config' in checkpoint_config:
+            info['model_config'] = checkpoint_config['model_config']
+            info['training_config'] = checkpoint_config.get(
+                'training_config', {})
+        else:
+            info['config'] = checkpoint_config
 
     if 'epoch' in checkpoint:
         info['epoch'] = checkpoint['epoch']
@@ -213,5 +249,15 @@ def get_model_info(checkpoint_path):
         info['num_parameters'] = num_params
         info['state_dict_keys'] = list(state_dict.keys())[
             :10]  # Prime 10 chiavi
+
+        #  Deduce num_filters dallo state_dict
+        if 'conv_blocks.0.weight' in state_dict:
+            try:
+                f1 = state_dict['conv_blocks.0.weight'].shape[0]
+                f2 = state_dict['conv_blocks.5.weight'].shape[0]
+                f3 = state_dict['conv_blocks.10.weight'].shape[0]
+                info['detected_num_filters'] = [f1, f2, f3]
+            except:
+                pass
 
     return info
