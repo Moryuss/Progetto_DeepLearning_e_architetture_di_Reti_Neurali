@@ -7,6 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATASET_DIR = BASE_DIR / "data" / "dataset"
 CLASSIFY_IMAGES_DIR = BASE_DIR / "data" / "classify_images"
 
+TEST_IMAGES_DIR = BASE_DIR / "data" / "test_images"
 # modelli detector (YOLO - non cambia)
 DETECTOR_MODEL_PATH = BASE_DIR / "models" / "face_detection" / "yolo11_nano.pt"
 

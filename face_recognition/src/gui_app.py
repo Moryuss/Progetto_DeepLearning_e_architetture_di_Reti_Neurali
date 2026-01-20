@@ -16,15 +16,38 @@ class FaceRecognitionApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Face Recognition Manager")
-        self.root.geometry("900x750")
+        self.root.geometry("900x900")  # ← Era 900x750, aumenta altezza
 
         # Style
         style = ttk.Style()
         style.theme_use('clam')
 
-        # Main container
-        main_frame = ttk.Frame(root, padding="10")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        # ========== AGGIUNGI CANVAS + SCROLLBAR ==========
+        # Canvas con scrollbar
+        canvas = tk.Canvas(root)
+        scrollbar = ttk.Scrollbar(
+            root, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas, padding="10")
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Grid canvas e scrollbar
+        canvas.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
+        # Abilita scroll con mouse wheel
+
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        # Main container è ora scrollable_frame invece di ttk.Frame(root)
+        main_frame = scrollable_frame  # ← Usa questo invece di creare nuovo frame
 
         # ========== SECTION 0: Model Selection (NUOVO!) ==========
         model_frame = ttk.LabelFrame(
@@ -159,10 +182,63 @@ class FaceRecognitionApp:
         ttk.Button(util_frame, text="📊 Show Dataset Info",
                    command=self.show_dataset_info).grid(row=0, column=2, padx=5, pady=5)
 
-        # ========== SECTION 5: Console Output ==========
+        # ========== SECTION 5: Model Testing  ==========
+        test_frame = ttk.LabelFrame(
+            main_frame, text="5. Model Testing", padding="10")
+        test_frame.grid(row=5, column=0, columnspan=2,
+                        sticky=(tk.W, tk.E), pady=5)
+
+        # Row 0: Load test images
+        ttk.Label(test_frame, text="Test Images:").grid(
+            row=0, column=0, sticky=tk.W)
+        ttk.Button(test_frame, text="📁 Load Test Images",
+                   command=self.load_test_images).grid(row=0, column=1, padx=5, pady=5)
+        self.test_images_label = ttk.Label(test_frame, text="No test images loaded",
+                                           foreground="gray")
+        self.test_images_label.grid(row=0, column=2, sticky=tk.W, padx=5)
+
+        # Row 1: Threshold setting
+        ttk.Label(test_frame, text="Recognition Threshold:").grid(
+            row=1, column=0, sticky=tk.W, pady=5)
+        self.threshold_var = tk.DoubleVar(value=0.60)
+        threshold_spinbox = ttk.Spinbox(
+            test_frame,
+            from_=0.0,
+            to=1.0,
+            increment=0.05,
+            textvariable=self.threshold_var,
+            width=10
+        )
+        threshold_spinbox.grid(row=1, column=1, sticky=tk.W, pady=5)
+        ttk.Label(test_frame, text="(0.0 - 1.0)", foreground="gray").grid(
+            row=1, column=2, sticky=tk.W)
+
+        # Row 2: Model selection for testing
+        ttk.Label(test_frame, text="Models to test:").grid(
+            row=2, column=0, sticky=tk.W)
+        self.test_all_models_var = tk.BooleanVar(value=True)
+        ttk.Radiobutton(test_frame, text="All models",
+                        variable=self.test_all_models_var,
+                        value=True).grid(row=2, column=1, sticky=tk.W)
+        ttk.Radiobutton(test_frame, text="Current model only",
+                        variable=self.test_all_models_var,
+                        value=False).grid(row=2, column=2, sticky=tk.W)
+
+        # Row 3: Run test button
+        ttk.Button(test_frame, text="🧪 Run Model Testing",
+                   command=self.run_model_testing,
+                   width=30).grid(row=3, column=0, columnspan=3, pady=10)
+
+        ttk.Label(test_frame,
+                  text="Note: Test images must be in folders named by person (e.g., test_images/mario_rossi/img1.jpg)",
+                  foreground="gray",
+                  font=("TkDefaultFont", 8),
+                  wraplength=700).grid(row=4, column=0, columnspan=3, sticky=tk.W)
+
+        # ========== SECTION 6: Console Output ==========
         console_frame = ttk.LabelFrame(
             main_frame, text="Console Output", padding="10")
-        console_frame.grid(row=5, column=0, columnspan=2,
+        console_frame.grid(row=6, column=0, columnspan=2,
                            sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
 
         self.console = scrolledtext.ScrolledText(console_frame, height=15,
@@ -175,13 +251,14 @@ class FaceRecognitionApp:
         # Configure grid weights
         root.columnconfigure(0, weight=1)
         root.rowconfigure(0, weight=1)
-        main_frame.columnconfigure(0, weight=1)
-        main_frame.rowconfigure(5, weight=1)
+        # main_frame.columnconfigure(0, weight=1)
+        # main_frame.rowconfigure(6, weight=1)
         console_frame.columnconfigure(0, weight=1)
         console_frame.rowconfigure(0, weight=1)
 
         self.selected_files = []
         self.classify_files = []
+        self.test_images_dir = None  # Path alla cartella test images
         self.log("App initialized. Ready to use!")
         self.log(f"Selected model: {DEFAULT_MODEL}", "INFO")
 
@@ -538,6 +615,180 @@ class FaceRecognitionApp:
         except Exception as e:
             messagebox.showerror(
                 "Error", f"Could not read dataset info:\n{str(e)}")
+
+    def load_test_images(self):
+        """Load test images from folder structure"""
+        test_dir = filedialog.askdirectory(
+            title="Select Test Images Folder",
+            initialdir=str(Path.cwd() / "data")
+        )
+
+        if not test_dir:
+            return
+
+        # Conta immagini e persone
+        test_path = Path(test_dir)
+        image_extensions = {'.jpg', '.jpeg', '.png', '.bmp'}
+
+        total_images = 0
+        people = []
+
+        for person_folder in test_path.iterdir():
+            if not person_folder.is_dir():
+                continue
+
+            images = [f for f in person_folder.iterdir()
+                      if f.suffix.lower() in image_extensions]
+
+            if len(images) > 0:
+                people.append(person_folder.name)
+                total_images += len(images)
+
+        if total_images == 0:
+            messagebox.showwarning(
+                "No Images Found",
+                "No test images found in selected folder.\n\n"
+                "Expected structure:\n"
+                "test_images/\n"
+                "├── person1/\n"
+                "│   └── img1.jpg\n"
+                "└── person2/\n"
+                "    └── img1.jpg"
+            )
+            return
+
+        # Salva path
+        self.test_images_dir = test_dir
+
+        # Aggiorna UI
+        self.test_images_label.config(
+            text=f"{total_images} images from {len(people)} people loaded",
+            foreground="green"
+        )
+
+        self.log(
+            f"Loaded {total_images} test images from {len(people)} people")
+        self.log(f"Test directory: {test_dir}")
+
+    def run_model_testing(self):
+        """Run systematic model testing"""
+        # Verifica test images
+        if not hasattr(self, 'test_images_dir'):
+            messagebox.showwarning(
+                "Warning",
+                "Please load test images first!"
+            )
+            return
+
+        # Determina quali modelli testare
+        test_all = self.test_all_models_var.get()
+        threshold = self.threshold_var.get()
+
+        if test_all:
+            models_list = [m for m in AVAILABLE_MODELS.keys()
+                           if "not working" not in m.lower()]
+            confirm_msg = (
+                f"Run testing on ALL models?\n\n"
+                f"Models to test: {len(models_list)}\n"
+                f"Threshold: {threshold}\n\n"
+                f"This will:\n"
+                f"- Test all models on test images\n"
+                f"- Generate accuracy tables and confusion matrices\n"
+                f"- Save results in test_results/ folder\n\n"
+                f"This may take several minutes.\n\n"
+                f"Continue?"
+            )
+        else:
+            current_model = self.get_current_model_name()
+            models_list = [current_model]
+            confirm_msg = (
+                f"Run testing on current model?\n\n"
+                f"Model: {current_model}\n"
+                f"Threshold: {threshold}\n\n"
+                f"This will test the model and generate results.\n\n"
+                f"Continue?"
+            )
+
+        if not messagebox.askyesno("Confirm Testing", confirm_msg):
+            return
+
+        self.log("="*60, "INFO")
+        self.log("🧪 STARTING MODEL TESTING", "INFO")
+        self.log(f"Test directory: {self.test_images_dir}", "INFO")
+        self.log(f"Models to test: {len(models_list)}", "INFO")
+        self.log(f"Threshold: {threshold}", "INFO")
+        self.log("="*60, "INFO")
+
+        # Run in thread
+        thread = threading.Thread(
+            target=self._do_model_testing,
+            args=(models_list, threshold)
+        )
+        thread.start()
+
+    def _do_model_testing(self, models_list, threshold):
+        """Internal method to run model testing"""
+        try:
+            # Verifica che test_images_dir sia valido
+            if not self.test_images_dir:
+                self.log("✗ Error: No test directory specified", "ERROR")
+                return
+
+            # Costruisci comando - converti tutto in stringhe
+            cmd = [
+                sys.executable, "-m", "src.test_models",
+                "--test-dir", str(self.test_images_dir),
+                "--threshold", str(threshold)
+            ]
+
+            # Aggiungi modelli specifici se non tutti
+            if len(models_list) < len(AVAILABLE_MODELS):
+                cmd.append("--models")
+                cmd.extend([str(m) for m in models_list])
+
+            self.log(f"Running: {' '.join(cmd)}", "INFO")
+
+            # Esegui test - AGGIUNGI encoding='utf-8' e errors='replace'
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                encoding='utf-8',      # ← AGGIUNGI
+                # ← AGGIUNGI (sostituisce caratteri non decodificabili)
+                errors='replace'
+            )
+
+            # Log output
+            if result.stdout:
+                for line in result.stdout.split('\n'):
+                    if line.strip():
+                        self.log(line, "INFO")
+
+            if result.returncode == 0:
+                self.log("="*60, "SUCCESS")
+                self.log("✓ MODEL TESTING COMPLETED!", "SUCCESS")
+                self.log(
+                    "Check test_results/ folder for detailed results", "SUCCESS")
+                self.log("="*60, "SUCCESS")
+
+                # Messagebox finale
+                self.root.after(0, lambda: messagebox.showinfo(
+                    "Testing Complete",
+                    "Model testing completed successfully!\n\n"
+                    "Results saved in test_results/ folder:\n"
+                    "- results.csv (detailed data)\n"
+                    "- results_table.png (visual table)\n"
+                    "- accuracy_comparison.png (bar chart)\n"
+                    "- confusion_matrices/ (one per model)\n"
+                    "- wrong_predictions/ (images with errors)"
+                ))
+            else:
+                self.log(f"✗ Testing failed: {result.stderr}", "ERROR")
+
+        except Exception as e:
+            self.log(f"✗ Error running testing: {str(e)}", "ERROR")
+            import traceback
+            self.log(traceback.format_exc(), "ERROR")
 
 
 def main():
