@@ -1,0 +1,324 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[italian]{babel}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=red!30]
+\tikzstyle{process} = [rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30]
+\tikzstyle{decision} = [diamond, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=green!30]
+\tikzstyle{arrow} = [thick,->,>=stealth]
+
+\geometry{a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Analisi Codice Face Recognition},
+    pdfpagemode=FullScreen,
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Analisi Codice Sorgente}
+\fancyhead[R]{Progetto di Riconoscimento Facciale}
+\fancyfoot[C]{\thepage}
+
+\title{\textbf{Analisi del Codice Sorgente \\ Progetto di Riconoscimento Facciale}}
+\author{Ghidini Matteo}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Architettura Generale}
+Il sistema è suddiviso in tre aree logiche: componenti Core, script di preparazione e entrypoint esecutivi. La configurazione è centralizzata per garantire modularità e manutenibilità.
+
+\subsection{Flusso Logico del Sistema}
+Il seguente diagramma illustra come i dati fluiscono dal dataset grezzo fino all\'output di riconoscimento in tempo reale.
+
+\begin{center}
+\begin{tikzpicture}[node distance=2cm]
+    \node (start) [startstop] {Dataset Immagini};
+    \node (pro1) [process, below of=start] {Augment (augment.py)};
+    \node (pro2) [process, below of=pro1] {Extraction (image\_to\_embedding.py)};
+    \node (data) [decision, below of=pro2, yshift=-0.5cm] {Database .NPZ};
+    \node (main) [process, right of=data, xshift=4cm] {Entrypoint (main\_*.py)};
+    \node (out) [startstop, below of=main] {Output Visuale};
+
+    \draw [arrow] (start) -- (pro1);
+    \draw [arrow] (pro1) -- (pro2);
+    \draw [arrow] (pro2) -- (data);
+    \draw [arrow] (data) -- (main);
+    \draw [arrow] (main) -- (out);
+\end{tikzpicture}
+\end{center}
+
+\newpage
+
+\section{Analisi dei Moduli Core}
+I componenti Core forniscono le funzionalità atomiche necessarie all\'intero ecosistema.
+
+\subsection{detector.py}
+Contiene la classe \texttt{FaceDetector} per l\'individuazione dei volti tramite YOLO. Il metodo \texttt{detect} astrae l\'inferenza del modello e restituisce un elenco di bounding box e score di confidenza.
+\begin{lstlisting}[language=Python, caption=Metodo detect in FaceDetector]
+def detect(self, frame):
+    \"\"
+    Rileva volti in un frame BGR.
+    Returns:
+        dictionary con:
+        List[Tuple[int, int, int, int]]: lista di bounding box (x1, y1, x2, y2)
+        score: confidenza della rilevazione
+    \"\"
+    results = self.model(frame, conf=self.conf, verbose=False)
+    faces = []
+
+    for result in results:
+        if not result.boxes:
+            continue
+
+        boxes = result.boxes.xyxy.cpu().numpy()
+        scores = result.boxes.conf.cpu().numpy()
+
+        for i in range(len(boxes)):
+            x1, y1, x2, y2 = map(int, boxes[i])
+            faces.append({
+                'bbox': (x1, y1, x2, y2),
+                'score': float(scores[i])
+            })
+
+    return faces
+\end{lstlisting}
+\textbf{Relazioni:} Fornisce l\'input (crop del volto) ai moduli di riconoscimento.
+
+\subsection{recognizer.py}
+Implementa \texttt{FaceRecognizer} per la generazione di embedding vettoriali. Il metodo \texttt{get\_embedding} riceve un\'immagine ritagliata di un volto, la preprocessa e la passa al modello per ottenere un vettore normalizzato.
+\begin{lstlisting}[language=Python, caption=Metodo get\_embedding in FaceRecognizer]
+def get_embedding(self, face_bgr: np.ndarray) -> np.ndarray:
+    \"\"
+    Estrae embedding normalizzato L2.
+    \"\"
+    face_tensor = self._preprocess(face_bgr)
+
+    with torch.no_grad():
+        if self.use_get_embedding:
+            embedding = self.model.get_embedding(face_tensor)
+        else:
+            embedding = self.model(face_tensor)
+
+        embedding = embedding.cpu().numpy()[0]
+
+        # Normalizzazione L2
+        norm = np.linalg.norm(embedding)
+        embedding = embedding / norm if norm > 0 else embedding
+
+        return embedding
+\end{lstlisting}
+\textbf{Relazioni:} Trasforma i dati visuali in dati numerici per i confronti di similarità.
+
+\subsection{utils.py}
+Collezione di funzioni helper. La funzione \texttt{recognize\_faces} orchestra il processo di riconoscimento: rileva i volti, calcola l\'embedding per ciascuno e lo confronta con il database pre-caricato.
+\begin{lstlisting}[language=Python, caption=Funzione recognize\_faces in utils.py]
+def recognize_faces(frame, detector, recognizer, embeddings_array, labels_list, threshold=0.60):
+    \"\"
+    Rileva volti, calcola embedding, confronta con dataset.
+    \"\"
+    faces = detector.detect(frame)
+    results = []
+
+    for face in faces:
+        (x1, y1, x2, y2) = face['bbox']
+        face_crop = frame[y1:y2, x1:x2]
+        name = \"Unknown\"
+        confidence = 0.0
+
+        emb = recognizer.get_embedding(face_crop)
+
+        if embeddings_array.size > 0:
+            # cosine similarity = dot product (embedding L2-normalizzati)
+            sims = embeddings_array @ emb
+            best_idx = np.argmax(sims)
+            best_sim = sims[best_idx]
+
+            if best_sim > threshold:
+                name = labels_list[best_idx]
+                confidence = (best_sim - threshold) / (1.0 - threshold)
+
+        results.append({
+            \"bbox\": (x1, y1, x2, y2),
+            \"name\": name,
+            \"confidence\": confidence
+        })
+
+    return results
+\end{lstlisting}
+\textbf{Relazioni:} Utilizzato dagli entrypoint per orchestrare le fasi di detection e recognition.
+
+\section{Preparazione Dati ed Entrypoint}
+
+\subsection{Script di Preparazione (Offline)}
+\begin{description}
+    \item[image\_to\_embedding.py:] Pipeline che utilizza \textit{detector} e \textit{recognizer} per generare i database vettoriali. Itera sulle immagini, rileva i volti, calcola gli embedding e li salva in formato \texttt{.npz}.
+\end{description}
+\begin{lstlisting}[language=Python, caption=Ciclo principale in image\_to\_embedding.py]
+for img_path, img_type in image_files:
+    fname = os.path.basename(img_path)
+    img = cv2.imread(img_path)
+    if img is None:
+        metadata[\"skipped_images\"].append(fname)
+        continue
+
+    faces = detector.detect(img)
+    if len(faces) != 1:
+        print(f\"WARN {person_name}/{fname}: {len(faces)} faces, skip\")
+        metadata[\"skipped_images\"].append(fname)
+        continue
+
+    x1, y1, x2, y2 = faces[0][\"bbox\"]
+    face_crop = img[y1:y2, x1:x2]
+
+    emb = recognizer.get_embedding(face_crop)
+    embeddings[fname] = emb
+\end{lstlisting}
+
+\subsection{Script Eseguibili (Entrypoint)}
+\begin{description}
+    \item[main\_camera.py]: Sistema di riconoscimento in tempo reale. Il ciclo principale cattura i frame dalla webcam e invoca \texttt{recognize\_faces}.
+\end{description}
+\begin{lstlisting}[language=Python, caption=Ciclo principale in main\_camera.py]
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    results = recognize_faces(
+        frame, detector, recognizer, embeddings_array, labels_list)
+
+    # Disegna bounding box
+    for r in results:
+        x1, y1, x2, y2 = r[\"bbox\"]
+        name = r[\"name\"]
+        confidence = r[\"confidence\"]
+        draw_label(frame, name, confidence, (x1, y1, x2, y2))
+
+    cv2.imshow(\"Face Recognition\", frame)
+    if cv2.waitKey(1) & 0xFF == 27:  # ESC per uscire
+        break
+\end{lstlisting}
+
+\end{document}
+
+\section{Interfaccia Grafica (GUI)}
+Per semplificare l'interazione con il sistema, è stata sviluppata un'applicazione grafica \texttt{gui\_app.py} basata su Tkinter. La GUI astrae l'uso degli script da riga di comando, guidando l'utente attraverso le operazioni più comuni.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{Relazione/Immagini_Relazione/GUI_App.png}
+    \caption{Panoramica dell'interfaccia grafica.}
+    \label{fig:gui}
+\end{figure}
+
+\subsection{Struttura e Funzionalità Principali}
+L'interfaccia è suddivisa in sezioni numerate che rappresentano un flusso di lavoro logico:
+\begin{enumerate}
+    \item \textbf{Model Selection:} Permette di selezionare il modello di riconoscimento da utilizzare per tutte le operazioni. Mostra una descrizione del modello e verifica l'esistenza dei file dei pesi.
+    \item \textbf{Import \& Process Images:} Sezione per aggiungere nuove persone al dataset. L'utente inserisce il nome, seleziona le immagini e avvia un processo che copia i file, esegue l'augmentazione (se necessaria) e calcola gli embedding.
+    \item \textbf{Load Images to Classify:} Carica le immagini da usare per il riconoscimento su file statici.
+    \item \textbf{Run Main Scripts:} Pulsanti per avviare i quattro script principali dell'applicazione (riconoscimento da camera, da immagine e ricerca look-alike).
+    \item \textbf{Utilities:} Funzioni per la manutenzione del database di embedding, come la ri-estrazione forzata o incrementale.
+    \item \textbf{Model Testing:} Una sezione dedicata a eseguire test sistematici sui modelli, calcolando metriche di accuratezza e generando report.
+    \item \textbf{Console Output:} Un'area di testo che mostra i log di tutte le operazioni eseguite, fornendo feedback in tempo reale.
+\end{enumerate}
+Tutte le operazioni che richiedono tempo (come l'estrazione di embedding o l'esecuzione di script) vengono eseguite in thread separati per non bloccare l'interfaccia.
+
+\subsection{Flusso di Lavoro: Aggiunta di una Nuova Persona}
+L'aggiunta di una nuova persona è gestita dal metodo \texttt{\_do\_import\_and\_process}. Questo metodo orchestra la copia dei file, l'augmentazione e l'estrazione degli embedding invocando gli script corrispondenti tramite \texttt{subprocess}.
+
+\begin{lstlisting}[language=Python, caption=Logica di importazione e processamento in gui\_app.py]
+def _do_import_and_process(self, person_name, target, model_name):
+    try:
+        # Determine target directory based on 'target'
+        if target == "dataset":
+            base_dir = Path(DATASET_DIR)
+            person_dir = base_dir / person_name / "images"
+            needs_augment = True
+            script = "image_to_embedding.py"
+        # ... (other targets)
+
+        # Copy images
+        for file in self.selected_files:
+            # ... (copy logic)
+
+        # Run augmentation if needed
+        if needs_augment:
+            self.log("Running augmentation...")
+            subprocess.run([sys.executable, "-m", "src.augment"], ...)
+
+        # Extract embeddings
+        self.log(f"Extracting embeddings with model: {model_name}...")
+        cmd = [sys.executable, "-m", f"src.{script.replace('.py', '')}"]
+        cmd.extend(["--model", model_name])
+        subprocess.run(cmd, ...)
+
+    except Exception as e:
+        self.log(f"Error: {str(e)}", "ERROR")
+\end{lstlisting}
+
+\subsection{Esecuzione degli Script Principali}
+L'esecuzione degli script principali è gestita dal metodo \texttt{\_do\_run\_script}, che riceve il nome dello script e il modello selezionato, e li esegue in un sottoprocesso.
+
+\begin{lstlisting}[language=Python, caption=Esecuzione di uno script principale in gui\_app.py]
+def _do_run_script(self, script_name, model_name):
+    try:
+        # Pass the selected model as an argument
+        result = subprocess.run(
+            [sys.executable, "-m", script_name, "--model", model_name],
+            capture_output=True,
+            text=True
+        )
+        self.log(result.stdout)
+        if result.returncode != 0:
+            self.log(f"{script_name} failed: {result.stderr}", "ERROR")
+    except Exception as e:
+        self.log(f"Error running {script_name}: {str(e)}", "ERROR")
+\end{lstlisting}
+
+\end{document}
