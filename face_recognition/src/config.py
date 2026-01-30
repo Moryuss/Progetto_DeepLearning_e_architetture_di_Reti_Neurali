@@ -57,6 +57,12 @@ AVAILABLE_MODELS = {
         "embeddings_suffix": "cnn_transferLearning_LFW_256",
         "description": "CNN Resnet pretrained su ImageNet, transfer learning ee fine-tuned su LFW"
     },
+    "DNN (LFW) (256-dim)": {
+        "backbone_type": "FaceEmbeddingDNN",
+        "model_path": BASE_DIR / "models" / "face_recognition" / "dnn_lfw_(256).pth",
+        "embeddings_suffix": "dnn_lfw_256",
+        "description": "DNN con embeddings 256-dim su LFW"
+    },
 }
 
 # Modello di default (usato se non specificato)
