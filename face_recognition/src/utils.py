@@ -92,6 +92,7 @@ def preprocess_for_recognizer(image, input_size):
 
     img = np.transpose(img, (2, 0, 1))
     img = np.expand_dims(img, axis=0)
+    img = np.ascontiguousarray(img)
 
     return img
 

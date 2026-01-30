@@ -2,6 +2,7 @@ import torch
 from facenet_pytorch import InceptionResnetV1
 from .face_embedding_cnn import FaceEmbeddingCNN
 from .face_embedding_dnn import FaceEmbeddingDNN
+from .face_embedding_TransferLearning_and_FineTuning import TransferLearningEmbeddingCNN
 
 
 def create_cnn_model(config):
@@ -186,6 +187,74 @@ def create_model(backbone_type, checkpoint_path=None, **model_kwargs):
             'image_size': 128,  # DNN usa 128x128
             'embedding_size': config.get('embedding_size', 128),
             'use_get_embedding': True  # FaceEmbeddingDNN ha get_embedding()
+        }
+
+    elif backbone_type == 'TransferLearningEmbeddingCNN':
+        # Transfer Learning CNN con backbone pre-addestrato (ResNet)
+        config = {}
+
+        if checkpoint_path:
+            try:
+                checkpoint = torch.load(checkpoint_path, map_location='cpu')
+                if isinstance(checkpoint, dict) and 'config' in checkpoint:
+                    # Gestisci config annidata (model_config)
+                    checkpoint_config = checkpoint['config']
+
+                    if 'model_config' in checkpoint_config:
+                        config = checkpoint_config['model_config'].copy()
+                        print(
+                            f"✓ Config Transfer Learning caricata da checkpoint['config']['model_config']:")
+                    else:
+                        config = checkpoint_config.copy()
+                        print(
+                            f"✓ Config Transfer Learning caricata da checkpoint['config']:")
+
+                    print(
+                        f"  - Embedding size: {config.get('embedding_size', 'N/A')}")
+                    print(
+                        f"  - ResNet version: {config.get('resnet_version', 'N/A')}")
+                    print(
+                        f"  - Freeze backbone: {config.get('freeze_resnet_backbone', 'N/A')}")
+                    print(
+                        f"  - Num filters: {config.get('num_filters', 'N/A')}")
+                    print(
+                        f"  - Use GAP: {config.get('use_global_avg_pool', 'N/A')}")
+                    print(f"  - Dropout: {config.get('dropout_rate', 'N/A')}")
+                else:
+                    print(
+                        "⚠️ Checkpoint Transfer Learning non contiene 'config', uso valori di default")
+            except Exception as e:
+                print(
+                    f"⚠️ Warning: impossibile caricare config Transfer Learning da checkpoint: {e}")
+
+        # Override con parametri forniti dall'utente
+        config.update(model_kwargs)
+
+        # Valori di default
+        if not config:
+            config = {
+                'use_pretrained_resnet': True,
+                'resnet_version': 'resnet18',
+                'freeze_resnet_backbone': False,
+                'num_filters': [256, 256],
+                'kernel_sizes': [3, 3],
+                'fc_hidden_size': 512,
+                'embedding_size': 128,
+                'dropout_rate': 0.3,
+                'use_batchnorm': True,
+                'use_global_avg_pool': True
+            }
+            print(
+                "⚠️ Warning: nessuna config Transfer Learning trovata, uso valori di default")
+
+        # Crea il modello
+        model = TransferLearningEmbeddingCNN(**config)
+
+        return {
+            'model': model,
+            'image_size': 224,  # ResNet usa tipicamente 224x224
+            'embedding_size': config.get('embedding_size', 128),
+            'use_get_embedding': True  # Ha get_embedding()
         }
 
     else:

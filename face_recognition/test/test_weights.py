@@ -1,8 +1,9 @@
 # Puoi eseguire questo snippet velocemente?
 import torch
 # ""model_path": BASE_DIR / "models" / "face_recognition" / "vggface2.pt"
-PERSONALIZED_RECOGNIZER_MODEL_PATH = "C:/Users/Matteo Ghidini/OneDrive - unibs.it/UniBs/MAGISTRALE/Deep Learning e Architetture di reti neurali/Code/face_recognition/models/face_recognition/cnn_gap_celeba.pth"
-# Sostituisci con il path di uno dei tuoi .pth
+PERSONALIZED_RECOGNIZER_MODEL_PATH = "C:/Users/Matteo Ghidini/OneDrive - unibs.it/UniBs/MAGISTRALE/Deep Learning e Architetture di reti neurali/Code/face_recognition/models/face_recognition/cnn_transferLearning_finetuned_celebA.pth"
+# PERSONALIZED_RECOGNIZER_MODEL_PATH = "C:/Users/Matteo Ghidini/OneDrive - unibs.it/UniBs/MAGISTRALE/Deep Learning e Architetture di reti neurali/Code/face_recognition/models/face_recognition/dnn_lfw_(256).pth"
+
 checkpoint = torch.load(
     PERSONALIZED_RECOGNIZER_MODEL_PATH, map_location="cpu")
 

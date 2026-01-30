@@ -45,11 +45,17 @@ AVAILABLE_MODELS = {
         "embeddings_suffix": "cnn_deep_residual_256",
         "description": "CNN con residual blocks, embeddings 256-dim"
     },
-    "DNN Baseline (128-dim)(not working)": {
-        "backbone_type": "FaceEmbeddingDNN",
-        "model_path": BASE_DIR / "models" / "face_recognition" / "dnn_baseline_128.pth",
-        "embeddings_suffix": "dnn_baseline_128",
-        "description": "DNN fully-connected"
+    "CNN Transfer Learning & Fine Tuning (CelebA) (256-dim)": {
+        "backbone_type": "TransferLearningEmbeddingCNN",
+        "model_path": BASE_DIR / "models" / "face_recognition" / "cnn_transferLearning_finetuned_celebA.pth",
+        "embeddings_suffix": "cnn_transferLearning_CelebA_256",
+        "description": "CNN Resnet pretrained su ImageNet, transfer learning e fine-tuned su CelebA"
+    },
+    "CNN Transfer Learning & Fine Tuning (LFW) (256-dim)": {
+        "backbone_type": "TransferLearningEmbeddingCNN",
+        "model_path": BASE_DIR / "models" / "face_recognition" / "cnn_transferLearning_finetuned_LFW.pth",
+        "embeddings_suffix": "cnn_transferLearning_LFW_256",
+        "description": "CNN Resnet pretrained su ImageNet, transfer learning ee fine-tuned su LFW"
     },
 }
 
