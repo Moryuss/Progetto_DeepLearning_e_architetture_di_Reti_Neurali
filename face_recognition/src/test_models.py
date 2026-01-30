@@ -19,6 +19,7 @@ Output:
 """
 
 import os
+import textwrap
 import cv2
 import numpy as np
 import pandas as pd
@@ -123,39 +124,57 @@ class ModelTestResults:
         df.to_csv(output_path, index=False)
         print(f"\n💾 Risultati salvati in: {output_path}")
 
+    # Converti predizioni in ✓/✗/-
+
     def plot_results_table(self, output_path: str):
         """Crea e salva tabella visuale con ✓/✗"""
         df = self.get_dataframe()
-
         # Crea pivot table: righe=immagini, colonne=modelli
         pivot = df.pivot_table(
             index=['image', 'true_label'],
             columns='model',
-            values='correct',
+            values='predicted',
             aggfunc='first'
         )
 
-        # Converti True/False in ✓/✗
-        pivot_display = pivot.applymap(
-            lambda x: '✓' if x else '✗' if pd.notna(x) else '-')
+        def convert_prediction(pred, true_label):
+            if pd.isna(pred):
+                return '-'
+            elif pred == 'Unknown' or pred == 'NO_DETECTION':
+                return '-'
+            elif pred == true_label:
+                return '✓'
+            else:
+                return '✗'
+         # Applica conversione usando il true_label dall'indice
+        pivot_display = pivot.copy()
+        for idx in pivot.index:
+            true_label = idx[1]  # idx = (image, true_label)
+            for col in pivot.columns:
+                pivot_display.loc[idx, col] = convert_prediction(
+                    pivot.loc[idx, col], true_label)
 
-        # Crea figura
-        fig, ax = plt.subplots(figsize=(16, max(8, len(pivot) * 0.3)))
+        # Crea figura (larghezza dinamica basata sul numero di colonne)
+        fig_width = max(16, len(pivot.columns) * 3)  # 3 unità per colonna
+        fig, ax = plt.subplots(figsize=(fig_width, max(8, len(pivot) * 0.3)))
         ax.axis('tight')
         ax.axis('off')
-
         # Colora celle
         cell_colors = []
-        for idx, row in pivot.iterrows():
+        for idx, row in pivot_display.iterrows():
             row_colors = []
             for val in row:
-                if pd.isna(val):
-                    row_colors.append('#CCCCCC')  # Grigio per NA
-                elif val:
-                    row_colors.append('#90EE90')  # Verde per corretto
-                else:
-                    row_colors.append('#FFB6C6')  # Rosso per sbagliato
+                if val == '-':
+                    row_colors.append('#CCCCCC')  # Grigio
+                elif val == '✓':
+                    row_colors.append('#90EE90')  # Verde
+                else:  # val == '✗'
+                    row_colors.append('#FFB6C6')  # Rosso
             cell_colors.append(row_colors)
+
+        # Calcola larghezza colonne dinamica
+        # Min 0.15, max per fit
+        col_width = max(0.15, 0.8 / len(pivot.columns))
 
         # Crea tabella
         table = ax.table(
@@ -165,17 +184,23 @@ class ModelTestResults:
             cellColours=cell_colors,
             cellLoc='center',
             loc='center',
-            colWidths=[0.15] * len(pivot.columns)
+            colWidths=[col_width] * len(pivot.columns)
         )
-
         table.auto_set_font_size(False)
         table.set_fontsize(8)
         table.scale(1, 2)
 
-        # Stile header
+        # Stile header con rotazione testo per nomi lunghi
         for i in range(len(pivot.columns)):
-            table[(0, i)].set_facecolor('#4472C4')
-            table[(0, i)].set_text_props(weight='bold', color='white')
+            import textwrap
+            wrapped_text = '\n'.join(textwrap.wrap(
+                str(pivot.columns[i]), width=20))
+            cell = table[(0, i)]
+            cell.get_text().set_text(wrapped_text)
+            cell.set_facecolor('#4472C4')
+            cell.set_text_props(weight='bold', color='white',
+                                ha='left', va='bottom')
+            cell.set_height(0.15)  # Aumenta altezza header per testo ruotato
 
         # Stile row labels
         for i in range(1, len(pivot) + 1):
@@ -184,11 +209,9 @@ class ModelTestResults:
 
         plt.title('Risultati Testing Modelli di Face Recognition\n(✓ = Corretto, ✗ = Sbagliato)',
                   fontsize=14, weight='bold', pad=20)
-
         plt.tight_layout()
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close()
-
         print(f"📊 Tabella risultati salvata in: {output_path}")
 
     def plot_confusion_matrix(self, model_name: str, output_dir: str):
@@ -338,55 +361,55 @@ def load_test_images(test_dir: str) -> List[Tuple[str, str]]:
     return test_images
 
 
-def save_wrong_predictions(results: ModelTestResults, test_images_info: List[Tuple[str, str]],
-                           detector, output_dir: str):
-    """
-    Salva immagini con predizioni sbagliate per analisi visuale.
+# def save_wrong_predictions(results: ModelTestResults, test_images_info: List[Tuple[str, str]],
+#                            detector, output_dir: str):
+#     """
+#     Salva immagini con predizioni sbagliate per analisi visuale.
 
-    Args:
-        results: oggetto con tutti i risultati
-        test_images_info: lista di (image_path, true_label)
-        detector: detector per ridisegnare bbox
-        output_dir: directory dove salvare le immagini
-    """
-    df = results.get_dataframe()
-    wrong_predictions = df[df['correct'] == False]
+#     Args:
+#         results: oggetto con tutti i risultati
+#         test_images_info: lista di (image_path, true_label)
+#         detector: detector per ridisegnare bbox
+#         output_dir: directory dove salvare le immagini
+#     """
+#     df = results.get_dataframe()
+#     wrong_predictions = df[df['correct'] == False]
 
-    if len(wrong_predictions) == 0:
-        print("\n✅ Nessuna predizione sbagliata! Perfetto!")
-        return
+#     if len(wrong_predictions) == 0:
+#         print("\n✅ Nessuna predizione sbagliata! Perfetto!")
+#         return
 
-    wrong_dir = Path(output_dir) / "wrong_predictions"
-    wrong_dir.mkdir(parents=True, exist_ok=True)
+#     wrong_dir = Path(output_dir) / "wrong_predictions"
+#     wrong_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"\n📸 Salvando {len(wrong_predictions)} predizioni sbagliate...")
+#     print(f"\n📸 Salvando {len(wrong_predictions)} predizioni sbagliate...")
 
-    for _, row in wrong_predictions.iterrows():
-        # Trova il path dell'immagine
-        img_path = next((path for path, label in test_images_info
-                        if Path(path).name == row['image'] and label == row['true_label']), None)
+#     for _, row in wrong_predictions.iterrows():
+#         # Trova il path dell'immagine
+#         img_path = next((path for path, label in test_images_info
+#                         if Path(path).name == row['image'] and label == row['true_label']), None)
 
-        if img_path is None:
-            continue
+#         if img_path is None:
+#             continue
 
-        # Carica immagine
-        frame = cv2.imread(img_path)
-        if frame is None:
-            continue
+#         # Carica immagine
+#         frame = cv2.imread(img_path)
+#         if frame is None:
+#             continue
 
-        # Disegna label con predizione sbagliata
-        text = f"TRUE: {row['true_label']} | PRED: {row['predicted']} ({row['confidence']:.2f})"
-        cv2.putText(frame, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
-                    0.7, (0, 0, 255), 2)
+#         # Disegna label con predizione sbagliata
+#         text = f"TRUE: {row['true_label']} | PRED: {row['predicted']} ({row['confidence']:.2f})"
+#         cv2.putText(frame, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
+#                     0.7, (0, 0, 255), 2)
 
-        # Salva
-        safe_model = row['model'].replace(
-            ' ', '_').replace('(', '').replace(')', '')
-        out_name = f"{Path(img_path).stem}_{safe_model}_WRONG.jpg"
-        out_path = wrong_dir / out_name
-        cv2.imwrite(str(out_path), frame)
+#         # Salva
+#         safe_model = row['model'].replace(
+#             ' ', '_').replace('(', '').replace(')', '')
+#         out_name = f"{Path(img_path).stem}_{safe_model}_WRONG.jpg"
+#         out_path = wrong_dir / out_name
+#         cv2.imwrite(str(out_path), frame)
 
-    print(f"  💾 Salvate in: {wrong_dir}")
+#     print(f"  💾 Salvate in: {wrong_dir}")
 
 
 def test_all_models(test_images_dir: str, dataset_dir: str, yolo_model_path: str,
@@ -550,7 +573,7 @@ def test_all_models(test_images_dir: str, dataset_dir: str, yolo_model_path: str
         results.plot_confusion_matrix(model_name, str(cm_dir))
 
     # Salva predizioni sbagliate
-    save_wrong_predictions(results, test_images, detector, str(output_dir))
+    # save_wrong_predictions(results, test_images, detector, str(output_dir))
 
     print(f"\n{'='*80}")
     print(f"✅ TEST COMPLETATO!")

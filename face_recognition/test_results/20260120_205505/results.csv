@@ -1,3 +1,0 @@
-image,true_label,model,predicted,confidence,correct,detection_success,inference_time_ms
-matteo_test_1.jpg,Matteo_Ghidini,InceptionResnetV1 (VGGFace2),Matteo_Ghidini,0.2835678160190583,True,True,525.585412979126
-matteo_test_2.jpg,Matteo_Ghidini,InceptionResnetV1 (VGGFace2),Matteo_Ghidini,0.3654263019561768,True,True,161.3600254058838
