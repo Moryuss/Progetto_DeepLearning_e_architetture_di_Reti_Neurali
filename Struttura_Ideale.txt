@@ -22,7 +22,3 @@ face_recognition/
 └── README.md
 
 
-https://chatgpt.com/share/6941c316-9134-8005-93e9-1fe4e4312b71
-
-
-https://chatgpt.com/share/695e809d-09f8-8005-b81d-a714ec19da5d
