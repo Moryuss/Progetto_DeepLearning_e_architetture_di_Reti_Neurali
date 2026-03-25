@@ -1,0 +1,105 @@
+configs = {
+        # 8. ResNet18 Transfer Learning - backbone congelato
+        'resnet18_frozen': {
+            'model_config': {
+                'use_pretrained_resnet': True,
+                'resnet_version': 'resnet18',
+                'freeze_resnet_backbone': True,  # Backbone congelato
+                'num_filters': [256, 256],  # 2 residual blocks custom
+                'kernel_sizes': [3, 3],
+                'fc_hidden_size': 512,
+                'embedding_size': 128,
+                'num_classes': 5749,
+                'dropout_rate': 0.3,
+                'use_batchnorm': True,
+                'use_global_avg_pool': True  # Sempre True per ResNet
+            },
+            'training_config': {
+                'learning_rate': 1e-3,  # LR normale (backbone congelato)
+                'batch_size': 64,
+                'num_epochs': 35,
+                'optimizer': 'adam',
+                'weight_decay': 1e-4,
+                'label_smoothing': 0.1,
+                'early_stopping_patience': 8
+            }
+        },
+
+        # 9. ResNet18 Transfer Learning - fine-tuning
+        'resnet18_finetuned': {
+            'model_config': {
+                'use_pretrained_resnet': True,
+                'resnet_version': 'resnet18',
+                'freeze_resnet_backbone': False,  # Backbone trainabile
+                'num_filters': [256, 256],
+                'kernel_sizes': [3, 3],
+                'fc_hidden_size': 512,
+                'embedding_size': 128,
+                'num_classes': 5749,
+                'dropout_rate': 0.3,
+                'use_batchnorm': True,
+                'use_global_avg_pool': True
+            },
+            'training_config': {
+                'learning_rate': 1e-4,  # LR basso (tutto trainabile)
+                'batch_size': 32,  # Batch più piccolo
+                'num_epochs': 35,
+                'optimizer': 'adam',
+                'weight_decay': 1e-4,
+                'label_smoothing': 0.1,
+                'early_stopping_patience': 8
+            }
+        },
+
+        # 10. ResNet34 Transfer Learning - modello più grande
+        'resnet34_frozen': {
+            'model_config': {
+                'use_pretrained_resnet': True,
+                'resnet_version': 'resnet34',
+                'freeze_resnet_backbone': True,
+                'num_filters': [384, 256],  # Più filtri per ResNet34
+                'kernel_sizes': [3, 3],
+                'fc_hidden_size': 768,
+                'embedding_size': 256,
+                'num_classes': 5749,
+                'dropout_rate': 0.3,
+                'use_batchnorm': True,
+                'use_global_avg_pool': True
+            },
+            'training_config': {
+                'learning_rate': 1e-3,
+                'batch_size': 48,
+                'num_epochs': 35,
+                'optimizer': 'adam',
+                'weight_decay': 1e-4,
+                'label_smoothing': 0.1,
+                'early_stopping_patience': 8
+            }
+        },
+
+        # 11. ResNet50 Transfer Learning - massima capacità
+        'resnet50_frozen': {
+            'model_config': {
+                'use_pretrained_resnet': True,
+                'resnet_version': 'resnet50',
+                'freeze_resnet_backbone': True,
+                'num_filters': [512, 256],  # Adatto a ResNet50 (output 2048)
+                'kernel_sizes': [3, 3],
+                'fc_hidden_size': 1024,
+                'embedding_size': 256,
+                'num_classes': 5749,
+                'dropout_rate': 0.4,
+                'use_batchnorm': True,
+                'use_global_avg_pool': True
+            },
+            'training_config': {
+                'learning_rate': 1e-3,
+                'batch_size': 32,  # Batch piccolo (ResNet50 pesante)
+                'num_epochs': 35,
+                'optimizer': 'adam',
+                'weight_decay': 1e-4,
+                'label_smoothing': 0.1,
+                'early_stopping_patience': 8
+            }
+        }
+    }

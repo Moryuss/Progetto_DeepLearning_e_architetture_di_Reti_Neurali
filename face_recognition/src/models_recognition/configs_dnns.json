@@ -1,0 +1,121 @@
+    configs = {
+        # 1. Baseline - configurazione base
+        'baseline': {
+            'model_config': {
+                'input_size': 128*128*3,
+                'hidden_sizes': [1024, 512],
+                'embedding_size': 128,
+                'dropout_rate': 0.5,
+                'use_batchnorm': True
+            },
+            'training_config': {
+                'learning_rate': 1e-3,
+                'batch_size': 64,
+                'num_epochs': 10,
+                'optimizer': 'adam',
+                'weight_decay': 0.0,
+                'label_smoothing': 0.0,
+                'early_stopping_patience': 5
+            }
+        },
+
+        # 2. No Dropout - test senza dropout
+        'no_dropout': {
+            'model_config': {
+                'input_size': 128*128*3,
+                'hidden_sizes': [1024, 512],
+                'embedding_size': 128,
+                'dropout_rate': 0.0,  # Rimosso
+                'use_batchnorm': True
+            },
+            'training_config': {
+                'learning_rate': 1e-3,
+                'batch_size': 64,
+                'num_epochs': 10,
+                'optimizer': 'adam',
+                'weight_decay': 0.0,
+                'label_smoothing': 0.0,
+                'early_stopping_patience': 5
+            }
+        },
+
+        # 3. No BatchNorm - test senza batch normalization
+        'no_batchnorm': {
+            'model_config': {
+                'input_size': 128*128*3,
+                'hidden_sizes': [1024, 512],
+                'embedding_size': 128,
+                'dropout_rate': 0.5,
+                'use_batchnorm': False  # Rimosso
+            },
+            'training_config': {
+                'learning_rate': 1e-3,
+                'batch_size': 64,
+                'num_epochs': 10,
+                'optimizer': 'adam',
+                'weight_decay': 0.0,
+                'label_smoothing': 0.0,
+                'early_stopping_patience': 5
+            }
+        },
+
+        # 4. Deep - rete più profonda
+        'deep': {
+            'model_config': {
+                'input_size': 128*128*3,
+                'hidden_sizes': [2048, 1024, 512, 256],  # Più layer
+                'embedding_size': 128,
+                'dropout_rate': 0.4,  # Dropout più basso per rete deep
+                'use_batchnorm': True
+            },
+            'training_config': {
+                'learning_rate': 5e-4,  # LR più basso per rete deep
+                'batch_size': 64,
+                'num_epochs': 15,  # Più epoche
+                'optimizer': 'adam',
+                'weight_decay': 0.0,
+                'label_smoothing': 0.0,
+                'early_stopping_patience': 6
+            }
+        },
+
+        # 5. Regularized - con L2 regularization e label smoothing
+        'regularized': {
+            'model_config': {
+                'input_size': 128*128*3,
+                'hidden_sizes': [1024, 512],
+                'embedding_size': 128,
+                'dropout_rate': 0.5,
+                'use_batchnorm': True
+            },
+            'training_config': {
+                'learning_rate': 1e-3,
+                'batch_size': 64,
+                'num_epochs': 10,
+                'optimizer': 'adam',
+                'weight_decay': 1e-4,  # L2 regularization
+                'label_smoothing': 0.1,  # Label smoothing
+                'early_stopping_patience': 5
+            }
+        },
+
+        # 6. Optimized - best practices combinate
+        'optimized': {
+            'model_config': {
+                'input_size': 128*128*3,
+                'hidden_sizes': [1536, 768, 384],  # Dimensioni intermedie
+                'embedding_size': 256,  # Embedding più grande
+                'dropout_rate': 0.3,  # Dropout moderato
+                'use_batchnorm': True
+            },
+            'training_config': {
+                'learning_rate': 5e-4,  # LR moderato
+                'batch_size': 128,  # Batch size più grande
+                'num_epochs': 20,
+                'optimizer': 'adam',
+                'weight_decay': 5e-5,  # Leggera L2 reg
+                'label_smoothing': 0.05,  # Leggero label smoothing
+                'early_stopping_patience': 7
+            }
+        }
+    }

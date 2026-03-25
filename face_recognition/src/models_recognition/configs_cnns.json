@@ -1,0 +1,163 @@
+configs = {
+        # 1. Baseline CNN - configurazione base
+        'cnn_baseline': {
+            'model_config': {
+                'input_channels': 3,
+                'num_filters': [32, 64, 128],  # 3 conv blocks
+                'kernel_sizes': [3, 3, 3],
+                'fc_hidden_size': 512,
+                'embedding_size': 128,
+                'dropout_rate': 0.5,
+                'use_batchnorm': True,
+                'use_global_avg_pool': False
+            },
+            'training_config': {
+                'learning_rate': 1e-3,
+                'batch_size': 64,
+                'num_epochs': 45,
+                'optimizer': 'adam',
+                'weight_decay': 0.0,
+                'label_smoothing': 0.0,
+                'early_stopping_patience': 8
+            }
+        },
+
+        # 2. Shallow CNN - meno layer convoluzionali
+        'cnn_shallow': {
+            'model_config': {
+                'input_channels': 3,
+                'num_filters': [32, 64],  # Solo 2 conv blocks
+                'kernel_sizes': [3, 3],
+                'fc_hidden_size': 512,
+                'embedding_size': 128,
+                'dropout_rate': 0.4,
+                'use_batchnorm': True,
+                'use_global_avg_pool': False
+            },
+            'training_config': {
+                'learning_rate': 1e-3,
+                'batch_size': 64,
+                'num_epochs': 45,
+                'optimizer': 'adam',
+                'weight_decay': 0.0,
+                'label_smoothing': 0.0,
+                'early_stopping_patience': 8
+            }
+        },
+
+        # 3. Deep CNN - più layer convoluzionali
+        'cnn_deep': {
+            'model_config': {
+                'input_channels': 3,
+                'num_filters': [32, 64, 128, 256],  # 4 conv blocks
+                'kernel_sizes': [3, 3, 3, 3],
+                'fc_hidden_size': 1024,
+                'embedding_size': 256,
+                'dropout_rate': 0.4,
+                'use_batchnorm': True,
+                'use_global_avg_pool': False
+            },
+            'training_config': {
+                'learning_rate': 5e-4,  # LR più basso per deep
+                'batch_size': 32,  # Batch più piccolo
+                'num_epochs': 45,
+                'optimizer': 'adam',
+                'weight_decay': 1e-5,
+                'label_smoothing': 0.05,
+                'early_stopping_patience': 8
+            }
+        },
+
+        # 4. Large Kernels - kernel più grandi
+        'cnn_large_kernels': {
+            'model_config': {
+                'input_channels': 3,
+                'num_filters': [32, 64, 128],
+                'kernel_sizes': [5, 5, 5],  # Kernel 5x5
+                'fc_hidden_size': 512,
+                'embedding_size': 128,
+                'dropout_rate': 0.5,
+                'use_batchnorm': True,
+                'use_global_avg_pool': False
+            },
+            'training_config': {
+                'learning_rate': 1e-3,
+                'batch_size': 64,
+                'num_epochs': 45,
+                'optimizer': 'adam',
+                'weight_decay': 0.0,
+                'label_smoothing': 0.0,
+                'early_stopping_patience': 8
+            }
+        },
+
+        # 5. Global Average Pooling - riduce parametri
+        'cnn_gap': {
+            'model_config': {
+                'input_channels': 3,
+                'num_filters': [64, 128, 256],
+                'kernel_sizes': [3, 3, 3],
+                'fc_hidden_size': 512,
+                'embedding_size': 128,
+                'dropout_rate': 0.4,
+                'use_batchnorm': True,
+                'use_global_avg_pool': True  # Usa GAP
+            },
+            'training_config': {
+                'learning_rate': 1e-3,
+                'batch_size': 64,
+                'num_epochs': 35,
+                'optimizer': 'adam',
+                'weight_decay': 1e-5,
+                'label_smoothing': 0.0,
+                'early_stopping_patience': 8
+            }
+        },
+
+        # 6. Optimized CNN - best practices
+        'cnn_optimized': {
+            'model_config': {
+                'input_channels': 3,
+                'num_filters': [64, 128, 256, 512],  # Progressione standard
+                'kernel_sizes': [3, 3, 3, 3],
+                'fc_hidden_size': 1024,
+                'embedding_size': 256,
+                'dropout_rate': 0.3,
+                'use_batchnorm': True,
+                'use_global_avg_pool': False,  # GAP per ridurre parametri
+                'use_residual': False
+            },
+            'training_config': {
+                'learning_rate': 5e-4,
+                'batch_size': 64,
+                'num_epochs': 35,
+                'optimizer': 'adam',
+                'weight_decay': 1e-4,  # L2 reg
+                'label_smoothing': 0.1,  # Label smoothing
+                'early_stopping_patience': 8
+            }
+        },
+
+        # 7. Deep Residual CNN - rete profonda con skip connections
+        'cnn_deep_residual': {
+            'model_config': {
+                'input_channels': 3,
+                'num_filters': [64, 64, 128, 128, 256, 256],  # 6 residual blocks
+                'kernel_sizes': [3, 3, 3, 3, 3, 3],
+                'fc_hidden_size': 1024,
+                'embedding_size': 256,
+                'dropout_rate': 0.3,
+                'use_batchnorm': True,
+                'use_global_avg_pool': False,
+                'use_residual': True  # Skip connections attive
+            },
+            'training_config': {
+                'learning_rate': 3e-4,  # LR più basso per deep residual
+                'batch_size': 32,
+                'num_epochs': 35,
+                'optimizer': 'adam',
+                'weight_decay': 1e-4,
+                'label_smoothing': 0.1,
+                'early_stopping_patience': 8
+            }
+        }
